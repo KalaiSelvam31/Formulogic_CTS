@@ -103,3 +103,27 @@ class DrugUtilizationResponse(BaseModel):
     forecast_years: List[int]
     historical: HistoricalData
     forecast: ForecastData
+
+class CPMPSavingsRequest(BaseModel):
+    rxcui: int
+    current_cost: float
+    utilization_rate: float
+
+class CPMPSavingsSummary(BaseModel):
+    original_rxcui: int
+    original_cost_per_member: float
+    best_alternative_rxcui: int
+    alternative_cost_per_member: float
+    utilization_rate_analyzed: float
+
+class CPMPSavingsPotential(BaseModel):
+    cpmp_reduction: float
+    percentage_reduction: float
+    total_annual_savings: float
+
+class CPMPSavingsResponse(BaseModel):
+    analysis_summary: CPMPSavingsSummary
+    original_cpmp: float
+    potential_cpmp_with_alternative: float
+    potential_savings: CPMPSavingsPotential
+    message: Optional[str] = None

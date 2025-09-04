@@ -26,7 +26,8 @@ from app.routers import (
     formulary_detail_analysis,
     therapeutic_equivalence,
     um_change_router,
-    drug_utilization_router
+    drug_utilization_router,
+    cpmp_analysis
 )
 
 from app import database
@@ -114,7 +115,7 @@ app.include_router(therapeutic_equivalence.router, prefix="/api", tags=["Therape
 app.include_router(um_change_router.router, prefix="/api", tags=["UM Analysis"])
 app.include_router(drug_utilization_router.router, prefix="/api", tags=["Drug Utilization Forecast"])
 
-
+app.include_router(cpmp_analysis.router, prefix="/api", tags=["CPMP Analysis"])
 @app.get("/")
 def read_root():
     return {"message": "Welcome to the CTS Project API"}
