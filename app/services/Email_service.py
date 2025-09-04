@@ -118,6 +118,7 @@ def send_registration_otp_email(user_email: str, otp: str):
     """
 
     send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(to=to, sender=sender, subject=subject, html_content=html_content)
+
     try:
         api_instance.send_transac_email(send_smtp_email)
         print(f"Registration OTP email sent to {user_email}")

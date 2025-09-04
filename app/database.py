@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Integer, String, Boolean, DateTime
+from sqlalchemy import create_engine, Integer, String, Boolean, DateTime, Float
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 import os
@@ -24,17 +24,20 @@ class User(Base):
     last_name = Column(String(50), nullable=True)
     email = Column(String(100), unique=True, index=True)
     password = Column(String(200))
-    is_verified = Column(Boolean , default=False)
-    analyses = relationship("RegionalDisparityAnalysis", back_populates="user")
-    formulary_analyses = relationship("FormularyDetailAnalysis", back_populates="user")
-    therapeutic_equivalence_analyses = relationship("RecommendationLogDB", back_populates="user")
+    is_verified = Column(Boolean, default=False)
+
+
+    regional_disparity_logs = relationship("RegionalDisparityAnalysis", back_populates="user")
+    formulary_detail_logs = relationship("FormularyDetailAnalysis", back_populates="user")
+    therapeutic_equivalent_logs = relationship("TherapeuticEquivalentLog", back_populates="user")
+
+
 
 
 class RegionalDisparityAnalysis(Base):
-    __tablename__ = "regional_disparity_analyses_result" # Corrected table name
+    __tablename__ = "regional_disparity_analyses_result"
 
     id = Column(Integer, primary_key=True, index=True)
-    # MODIFIED: Added lengths to all String columns
     input_rxcui = Column(String(50), index=True)
     rxcui = Column(String(50), index=True)
     status = Column(String(50))
@@ -46,11 +49,9 @@ class RegionalDisparityAnalysis(Base):
     step_therapy_required = Column(String(10), nullable=True)
     missing_states = Column(String(1000), nullable=True)
     disparity_message = Column(String(500), nullable=True)
-
-
+    timestamp = Column(DateTime, default=datetime.utcnow)
     user_id = Column(Integer, ForeignKey("users.id"))
-
-    user = relationship("User", back_populates="analyses")
+    user = relationship("User", back_populates="regional_disparity_logs")
 
 
 class FormularyDetailAnalysis(Base):
@@ -67,18 +68,35 @@ class FormularyDetailAnalysis(Base):
     non_preferred_cost = Column(String(50))
     state = Column(String(100))
     county_code = Column(String(50))
-
-    user_id = Column(Integer, ForeignKey("users.id"))
-    user = relationship("User", back_populates="formulary_analyses")
-
-class RecommendationLogDB(Base):
-    __tablename__ = "recommendation_logs"
-    id = Column(Integer, primary_key=True, index=True)
-    rxcui = Column(Integer, index=True, nullable=False)
-    recommended_ingredients = Column(String(255), nullable=False)
     timestamp = Column(DateTime, default=datetime.utcnow)
     user_id = Column(Integer, ForeignKey("users.id"))
-    # CORRECTED: Pointed back to the correct relationship name
-    user = relationship("User", back_populates="therapeutic_equivalence_analyses")
+    user = relationship("User", back_populates="formulary_detail_logs")
 
 
+class TherapeuticEquivalentLog(Base):
+    __tablename__ = "therapeutic_equivalent_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    input_rxcui = Column(Integer, index=True)
+    input_cost = Column(Float)
+    input_ingredient = Column(String(255))
+    timestamp = Column(DateTime, default=datetime.utcnow)
+    user_id = Column(Integer, ForeignKey("users.id"))
+
+    user = relationship("User", back_populates="therapeutic_equivalent_logs")
+    alternatives = relationship("TherapeuticEquivalentAlternative", back_populates="log_entry", cascade="all, delete-orphan")
+
+
+class TherapeuticEquivalentAlternative(Base):
+    __tablename__ = "therapeutic_equivalent_alternatives"
+
+    id = Column(Integer, primary_key=True, index=True)
+    log_id = Column(Integer, ForeignKey("therapeutic_equivalent_logs.id"))
+
+    ingredient = Column(String(255))
+    alternative_rxcui = Column(Integer)
+    alternative_cost = Column(Float)
+    cost_difference = Column(Float)
+    percentage_reduction = Column(String(20))
+
+    log_entry = relationship("TherapeuticEquivalentLog", back_populates="alternatives")

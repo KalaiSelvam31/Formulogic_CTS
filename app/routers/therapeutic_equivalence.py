@@ -1,30 +1,28 @@
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, Depends, status
 from sqlalchemy.orm import Session
 from app import database as models, schemas
 from app.deps import get_db
 from app.security import verify_token
 from app.ml_models.registry import ml_models
+from app.ml_models.therapeutic_eq_helper import PBMRecommender
 
 router = APIRouter()
 
-@router.post("/recommend-drug", response_model=schemas.DrugRecommenderResponse, tags=["Analysis"])
-def get_drug_recommendation(
-    request: schemas.DrugRecommenderRequest,
+@router.post("/therapeutic-equivalence", response_model=schemas.TherapeuticEquivalentResponse, tags=["Therapeutic Equivalence"])
+def get_therapeutic_equivalence(
+    request: schemas.TherapeuticEquivalentRequest,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(verify_token)
 ):
-    """
-    Recommends alternative drug ingredients based on a given RXCUI.
-    Requires authentication and logs the analysis to the database.
-    """
-    model = ml_models.get("drug_recommender")
+
+    model: PBMRecommender = ml_models.get("therapeutic_equivalence")
     if not model:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="The Drug Recommender model is not available."
+            detail="The Therapeutic Equivalence model is not available."
         )
 
-    result = model.predict(rxcui=request.rxcui, top_n=request.top_n)
+    result = model.recommend_by_rxcui(rxcui=request.rxcui, cost=request.cost)
 
     if result.get("message"):
         raise HTTPException(
@@ -33,16 +31,26 @@ def get_drug_recommendation(
         )
 
     if result.get("alternatives"):
-        ingredients_str = ", ".join(
-            [alt["ingredient"] for alt in result["alternatives"]]
-        )
-        db_analysis = models.RecommendationLogDB(
-            rxcui=request.rxcui,
-            recommended_ingredients=ingredients_str,
+        db_log = models.TherapeuticEquivalentLog(
+            input_rxcui=result["input_rxcui"],
+            input_cost=result["input_cost"],
+            input_ingredient=result["ingredient"],
             user_id=current_user.id
         )
-        db.add(db_analysis)
+
+        for alt in result["alternatives"]:
+            db_alternative = models.TherapeuticEquivalentAlternative(
+                ingredient=alt["Ingredient"],
+                alternative_rxcui=alt["Alternative_RXCUI"],
+                alternative_cost=alt["Alternative_cost"],
+                cost_difference=alt["Cost_difference"],
+                percentage_reduction=alt["Percentage_reduction"]
+            )
+            db_log.alternatives.append(db_alternative)
+
+        db.add(db_log)
         db.commit()
-        db.refresh(db_analysis)
+        db.refresh(db_log)
 
     return result
+

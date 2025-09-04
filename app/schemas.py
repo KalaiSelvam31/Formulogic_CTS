@@ -65,14 +65,41 @@ class ResendOTPRequest(BaseModel):
     email: str
     context: Literal["register", "forgot_password"]
 
-class DrugRecommenderRequest(BaseModel):
+class TherapeuticEquivalentRequest(BaseModel):
     rxcui: int
-    top_n: Optional[int] = 2
+    cost: float
 
-class AlternativeIngredient(BaseModel):
+class AlternativeDrug(BaseModel):
+    Ingredient: str
+    Alternative_RXCUI: int
+    Alternative_cost: float
+    Cost_difference: float
+    Percentage_reduction: str
+
+class TherapeuticEquivalentResponse(BaseModel):
+    input_rxcui: int
+    input_cost: float
     ingredient: str
+    alternatives: List[AlternativeDrug]
 
-class DrugRecommenderResponse(BaseModel):
-    rxcui: int
-    alternatives: List[AlternativeIngredient]
-    message: Optional[str] = None
+class DrugUtilizationRequest(BaseModel):
+
+    drug_name: str
+    steps: int = 5
+
+class HistoricalData(BaseModel):
+
+    years: List[int]
+    Total_Claims: List[int]
+    Total_Beneficiaries: List[int]
+
+class ForecastData(BaseModel):
+
+    Total_Claims: List[int]
+    Total_Beneficiaries: List[int]
+
+class DrugUtilizationResponse(BaseModel):
+    drug: str
+    forecast_years: List[int]
+    historical: HistoricalData
+    forecast: ForecastData
