@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FormuLogic - Regional Disparity Analysis</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #f8fffe;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        /* Navigation */
+        .navbar {
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 70px;
+        }
+        
+        .nav-logo a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .nav-logo h2 {
+            font-size: 1.6rem;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        .nav-logo .logic {
+            color: #4ade80;
+        }
+        
+        .nav-actions .back-btn {
+            background: #f3f4f6;
+            color: #333;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Space Grotesk', sans-serif;
+            text-decoration: none;
+        }
+        
+        .nav-actions .back-btn:hover {
+            background: #e5e7eb;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-top: 70px;
+            min-height: calc(100vh - 70px);
+            padding: 60px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 0 30px;
+        }
+
+        .analysis-form-container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+        }
+
+        .form-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .form-header .icon {
+            font-size: 2.5rem;
+            color: #4ade80;
+            margin-bottom: 12px;
+        }
+        
+        .form-header h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 8px;
+        }
+
+        .form-header p {
+            font-size: 1.1rem;
+            color: #666;
+        }
+
+        .input-group {
+            margin-bottom: 24px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-family: 'Space Grotesk', sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #4ade80;
+            box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.1);
+        }
+
+        .submit-btn {
+            width: 100%;
+            background: #4ade80;
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .submit-btn:hover {
+            background: #22c55e;
+            transform: translateY(-2px);
+        }
+        
+        .submit-btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+        
+        .btn-loader {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid transparent;
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        .submit-btn.loading .btn-text {
+             display: none;
+        }
+
+        .submit-btn.loading .btn-loader {
+            display: block;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Notification */
+        .notification {
+            position: fixed;
+            top: 90px;
+            right: 20px;
+            padding: 16px 24px;
+            border-radius: 12px;
+            font-weight: 500;
+            z-index: 4000;
+            transform: translateX(400px);
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        }
+        .notification.show { transform: translateX(0); }
+        .notification.error { background: #ef4444; color: white; }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <a href="./index.html">
+                    <h2>Formu<span class="logic">Logic</span></h2>
+                </a>
+            </div>
+            <div class="nav-actions">
+                <a href="./formulary_analysis.html" class="back-btn">
+                    <i class="fas fa-arrow-left"></i> Back
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <div class="analysis-form-container">
+                <div class="form-header">
+                    <div class="icon"><i class="fas fa-map-marked-alt"></i></div>
+                    <h1>Regional Disparity Analysis</h1>
+                    <p>Enter a drug's RxCUI to analyze its coverage across regions.</p>
+                </div>
+                <form id="analysisForm">
+                    <div class="input-group">
+                        <label for="rxcui">RxCUI (Drug Identifier)</label>
+                        <input type="text" id="rxcui" name="rxcui" placeholder="e.g., 161" required>
+                    </div>
+                    <button type="submit" class="submit-btn">
+                        <span class="btn-text">Run Analysis</span>
+                        <div class="btn-loader"></div>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <!-- Notification -->
+    <div id="notification" class="notification"></div>
+
+    <script>
+        // Navigation helper to fix environment-specific issues
+        function navigateTo(page) {
+            const link = document.createElement('a');
+            link.href = page;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        }
+
+        class RegionalAnalysis {
+            constructor() {
+                this.apiBase = 'http://127.0.0.1:8000';
+                this.init();
+            }
+
+            init() {
+                this.checkAuth();
+                this.bindEvents();
+            }
+
+            checkAuth() {
+                if (!localStorage.getItem('access_token')) {
+                    sessionStorage.setItem('redirectUrl', window.location.href);
+                    navigateTo('./login.html');
+                }
+            }
+
+            bindEvents() {
+                document.getElementById('analysisForm').addEventListener('submit', this.handleAnalysis.bind(this));
+            }
+
+            async handleAnalysis(e) {
+                e.preventDefault();
+                const form = e.target;
+                const rxcui = form.rxcui.value.trim();
+                const submitBtn = form.querySelector('.submit-btn');
+
+                if (!rxcui) {
+                    this.showNotification('Please enter a valid RxCUI.', 'error');
+                    return;
+                }
+
+                try {
+                    this.setLoading(submitBtn, true);
+                    const response = await this.apiCall('/api/analyze', 'POST', { rxcui });
+                    this.navigateToResults(rxcui, 'regional', response);
+                } catch (error) {
+                    this.showNotification(error.message || 'Analysis failed. Please try again.', 'error');
+                } finally {
+                    this.setLoading(submitBtn, false);
+                }
+            }
+            
+            navigateToResults(rxcui, analysisType, data) {
+                sessionStorage.setItem('analysisResults', JSON.stringify({
+                    rxcui,
+                    analysisType,
+                    data,
+                    timestamp: new Date().toISOString()
+                }));
+                navigateTo('./results.html');
+            }
+
+            async apiCall(endpoint, method, data) {
+                const token = localStorage.getItem('access_token');
+                const response = await fetch(`${this.apiBase}${endpoint}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                if (!response.ok) {
+                    if (response.status === 401) navigateTo('./login.html');
+                    throw new Error(result.detail || `Request failed with status ${response.status}`);
+                }
+                return result;
+            }
+
+            setLoading(btn, loading) {
+                btn.disabled = loading;
+                btn.classList.toggle('loading', loading);
+            }
+
+            showNotification(msg, type = 'error') {
+                const container = document.getElementById('notification');
+                container.textContent = msg;
+                container.className = `notification ${type} show`;
+                setTimeout(() => container.classList.remove('show'), 4000);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => new RegionalAnalysis());
+    </script>
+</body>
+</html>
+

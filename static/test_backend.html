@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backend Connection Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-btn:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Backend Connection Test</h1>
+    <p>Testing connection to: <strong>http://13.127.115.74:8000</strong></p>
+
+    <div class="test-section">
+        <h3>1. Basic Connectivity Test</h3>
+        <button class="test-btn" onclick="testBasicConnectivity()">Test Basic Connection</button>
+        <div id="basicResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>2. FastAPI Docs Test</h3>
+        <button class="test-btn" onclick="testFastAPIDocs()">Test /docs Endpoint</button>
+        <div id="docsResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>3. Health Check Test</h3>
+        <button class="test-btn" onclick="testHealthCheck()">Test Health Endpoint</button>
+        <div id="healthResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>4. Test Registration Endpoint</h3>
+        <button class="test-btn" onclick="testRegistration()">Test /auth/register</button>
+        <div id="registerResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>5. CORS Test</h3>
+        <button class="test-btn" onclick="testCORS()">Test CORS Headers</button>
+        <div id="corsResult" class="result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://127.0.0.1:8000';
+
+        function showResult(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `result ${type}`;
+        }
+
+        async function testBasicConnectivity() {
+            try {
+                const response = await fetch(API_BASE, { 
+                    method: 'GET',
+                    mode: 'cors'
+                });
+                showResult('basicResult', `✅ Success! Status: ${response.status}\nHeaders: ${JSON.stringify(Object.fromEntries(response.headers.entries()), null, 2)}`, 'success');
+            } catch (error) {
+                showResult('basicResult', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testFastAPIDocs() {
+            try {
+                const response = await fetch(`${API_BASE}/docs`, { 
+                    method: 'GET',
+                    mode: 'cors'
+                });
+                if (response.ok) {
+                    showResult('docsResult', `✅ FastAPI docs accessible! Status: ${response.status}`, 'success');
+                } else {
+                    showResult('docsResult', `⚠️ Docs endpoint returned status: ${response.status}`, 'info');
+                }
+            } catch (error) {
+                showResult('docsResult', `❌ Error accessing docs: ${error.message}`, 'error');
+            }
+        }
+
+        async function testHealthCheck() {
+            try {
+                const response = await fetch(`${API_BASE}/health`, { 
+                    method: 'GET',
+                    mode: 'cors'
+                });
+                if (response.ok) {
+                    const data = await response.text();
+                    showResult('healthResult', `✅ Health check successful! Status: ${response.status}\nResponse: ${data}`, 'success');
+                } else {
+                    showResult('healthResult', `⚠️ Health endpoint returned status: ${response.status}`, 'info');
+                }
+            } catch (error) {
+                showResult('healthResult', `❌ Error accessing health endpoint: ${error.message}`, 'error');
+            }
+        }
+
+        async function testRegistration() {
+            try {
+                const testData = {
+                    username: "testuser",
+                    first_name: "Test",
+                    last_name: "User",
+                    email: "test@example.com",
+                    password: "testpassword123"
+                };
+
+                const response = await fetch(`${API_BASE}/auth/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    mode: 'cors',
+                    body: JSON.stringify(testData)
+                });
+
+                const data = await response.text();
+                showResult('registerResult', `Response Status: ${response.status}\nResponse: ${data}`, response.ok ? 'success' : 'info');
+            } catch (error) {
+                showResult('registerResult', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testCORS() {
+            try {
+                const response = await fetch(`${API_BASE}/auth/register`, {
+                    method: 'OPTIONS',
+                    mode: 'cors'
+                });
+                
+                const corsHeaders = {
+                    'Access-Control-Allow-Origin': response.headers.get('Access-Control-Allow-Origin'),
+                    'Access-Control-Allow-Methods': response.headers.get('Access-Control-Allow-Methods'),
+                    'Access-Control-Allow-Headers': response.headers.get('Access-Control-Allow-Headers')
+                };
+                
+                showResult('corsResult', `CORS Headers:\n${JSON.stringify(corsHeaders, null, 2)}`, 'info');
+            } catch (error) {
+                showResult('corsResult', `❌ CORS test failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-run basic connectivity test on page load
+        window.addEventListener('load', () => {
+            testBasicConnectivity();
+        });
+    </script>
+</body>
+</html>

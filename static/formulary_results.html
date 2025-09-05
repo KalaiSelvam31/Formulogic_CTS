@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FormuLogic - Formulary Analysis Results</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Space Grotesk', sans-serif; background: #f8fffe; color: #333; line-height: 1.6; }
+        .navbar { background: white; border-bottom: 1px solid #e5e7eb; position: fixed; top: 0; width: 100%; z-index: 1000; }
+        .nav-container { max-width: 1400px; margin: 0 auto; padding: 0 30px; display: flex; align-items: center; justify-content: space-between; height: 70px; }
+        .nav-logo a { text-decoration: none; color: inherit; }
+        .nav-logo h2 { font-size: 1.6rem; font-weight: 600; color: #1a1a1a; }
+        .nav-logo .logic { color: #4ade80; }
+        .nav-actions .back-btn { background: #f3f4f6; color: #333; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; text-decoration: none; }
+        .nav-actions .back-btn:hover { background: #e5e7eb; }
+        .main-content { margin-top: 70px; min-height: calc(100vh - 70px); padding: 40px 0; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 0 30px; }
+        .results-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; padding: 32px; background: white; border-radius: 16px; box-shadow: 0 4px 16px rgba(0,0,0,0.05); }
+        .header-info h1 { font-size: 2.5rem; font-weight: 700; color: #1a1a1a; margin-bottom: 16px; }
+        .analysis-meta { display: flex; gap: 24px; flex-wrap: wrap; }
+        .meta-item { font-size: 0.95rem; color: #666; }
+        .meta-item strong { color: #333; }
+        .status-indicator { display: flex; align-items: center; gap: 8px; padding: 12px 20px; background: #f3f4f6; border-radius: 25px; font-weight: 500; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; }
+        .results-section { background: white; border-radius: 16px; padding: 32px; box-shadow: 0 4px 16px rgba(0,0,0,0.05); }
+        .cards-grid, .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
+        .result-card { background: #f9fafb; border-radius: 12px; padding: 24px; border: 1px solid #f3f4f6; }
+        .card-header { font-size: 1.2rem; font-weight: 600; color: #1a1a1a; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+        .card-content { font-size: 0.95rem; color: #666; }
+        .metric { display: flex; justify-content: space-between; padding: 6px 0; }
+        .metric-value { font-weight: 600; color: #333; }
+        .loading-state, .error-state { text-align: center; padding: 80px 20px; }
+        .loading-state h2, .error-state h2 { font-size: 1.8rem; margin-bottom: 12px; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo"><a href="./index.html"><h2>Formu<span class="logic">Logic</span></h2></a></div>
+            <div class="nav-actions"><a href="./features.html" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Features</a></div>
+        </div>
+    </nav>
+    <main class="main-content">
+        <div class="container" id="resultsContainer">
+            <div class="loading-state"><h2>Loading Results...</h2></div>
+        </div>
+    </main>
+    <script>
+        function navigateTo(page) {
+            const link = document.createElement('a'); link.href = page; document.body.appendChild(link); link.click(); link.remove();
+        }
+
+        class FormularyResultsPage {
+            constructor() {
+                this.init();
+            }
+            init() {
+                this.checkAuth();
+                this.loadResults();
+            }
+            checkAuth() {
+                if (!localStorage.getItem('access_token')) {
+                    navigateTo('./login.html');
+                }
+            }
+            loadResults() {
+                const storedResults = sessionStorage.getItem('formularyAnalysisResults');
+                if (storedResults) {
+                    this.displayResults(JSON.parse(storedResults));
+                } else {
+                    this.displayError('No analysis results found.');
+                }
+            }
+            displayResults(results) {
+                // FIX: Correctly access the nested data object from the API response
+                const { data } = results; 
+                const container = document.getElementById('resultsContainer');
+
+                const costHtml = data.patient_cost ? Object.entries(data.patient_cost).map(([key, value]) => `<div class="metric"><span>${key}:</span> <span class="metric-value">${value}</span></div>`).join('') : '<p>Not available</p>';
+                const geoHtml = data.geography ? Object.entries(data.geography).map(([key, value]) => `<div class="metric"><span>${key}:</span> <span class="metric-value">${value}</span></div>`).join('') : '<p>Not available</p>';
+
+                container.innerHTML = `
+                    <div class="results-header">
+                        <div class="header-info">
+                            <h1>Formulary Analysis Results</h1>
+                            <div class="analysis-meta">
+                                <span class="meta-item"><strong>Drug RxCUI:</strong> ${results.rxcui}</span>
+                                <span class="meta-item"><strong>Generated:</strong> ${new Date(results.timestamp).toLocaleString()}</span>
+                            </div>
+                        </div>
+                        <div class="status-indicator"><span class="status-dot"></span><span>Completed</span></div>
+                    </div>
+                    <div class="results-section">
+                        <div class="cards-grid">
+                            <div class="result-card">
+                                <h3 class="card-header"><i class="fas fa-clipboard-list"></i> Plan Details</h3>
+                                <div class="card-content">
+                                    <div class="metric"><span>Plan Name:</span> <span class="metric-value">${data.plan_name || 'N/A'}</span></div>
+                                    <div class="metric"><span>Status:</span> <span class="metric-value">${data.status || 'N/A'}</span></div>
+                                    <div class="metric"><span>Tier:</span> <span class="metric-value">${data.tier || 'N/A'}</span></div>
+                                </div>
+                            </div>
+                            <div class="result-card">
+                                <h3 class="card-header"><i class="fas fa-exclamation-triangle"></i> Restrictions</h3>
+                                <div class="card-content">${data.restrictions || 'No restrictions information available.'}</div>
+                            </div>
+                            <div class="result-card">
+                                <h3 class="card-header"><i class="fas fa-dollar-sign"></i> Patient Cost</h3>
+                                <div class="card-content">${costHtml}</div>
+                            </div>
+                        </div>
+                        <br>
+                        <div class="info-grid">
+                             <div class="result-card">
+                                <h3 class="card-header"><i class="fas fa-stethoscope"></i> Indications</h3>
+                                <div class="card-content">${data.indications || 'No indications information available.'}</div>
+                            </div>
+                             <div class="result-card">
+                                <h3 class="card-header"><i class="fas fa-map-marker-alt"></i> Geography</h3>
+                                <div class="card-content">${geoHtml}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            displayError(message) {
+                document.getElementById('resultsContainer').innerHTML = `<div class="error-state"><h2>Error</h2><p>${message}</p></div>`;
+            }
+        }
+        document.addEventListener('DOMContentLoaded', () => new FormularyResultsPage());
+    </script>
+</body>
+</html>
+

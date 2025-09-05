@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FormuLogic - UM Change Analysis</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Space Grotesk', sans-serif; background: #f8fffe; color: #333; line-height: 1.6; }
+        .navbar { background: white; border-bottom: 1px solid #e5e7eb; position: fixed; top: 0; width: 100%; z-index: 1000; }
+        .nav-container { max-width: 1400px; margin: 0 auto; padding: 0 30px; display: flex; align-items: center; justify-content: space-between; height: 70px; }
+        .nav-logo a { text-decoration: none; color: inherit; }
+        .nav-logo h2 { font-size: 1.6rem; font-weight: 600; }
+        .nav-logo .logic { color: #4ade80; }
+        .nav-actions .back-btn { background: #f3f4f6; color: #333; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; text-decoration: none; }
+        .main-content { margin-top: 70px; min-height: calc(100vh - 70px); padding: 60px 0; display: flex; align-items: center; justify-content: center; }
+        .container { max-width: 700px; width: 100%; padding: 0 30px; }
+        .analysis-form-container { background: white; border-radius: 20px; padding: 40px; box-shadow: 0 8px 30px rgba(0,0,0,0.08); }
+        .form-header { text-align: center; margin-bottom: 32px; }
+        .form-header h1 { font-size: 2.2rem; font-weight: 700; margin-bottom: 8px; }
+        .form-header p { font-size: 1.1rem; color: #666; }
+        .input-group { margin-bottom: 24px; }
+        .input-group label { display: block; margin-bottom: 8px; font-weight: 600; }
+        .input-group select { width: 100%; padding: 14px; border: 2px solid #e5e7eb; border-radius: 12px; font-size: 1rem; font-family: 'Space Grotesk', sans-serif; background-color: white; -webkit-appearance: none; appearance: none; background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>'); background-position: right 0.7rem center; background-repeat: no-repeat; background-size: 1.5em 1.5em; }
+        .submit-btn { width: 100%; background: #4ade80; color: white; border: none; padding: 16px; border-radius: 12px; font-size: 1.1rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .submit-btn:disabled { background: #9ca3af; }
+        .btn-loader { display: none; width: 20px; height: 20px; border: 2px solid transparent; border-top: 2px solid white; border-radius: 50%; animation: spin 1s linear infinite; }
+        .submit-btn.loading .btn-text { display: none; }
+        .submit-btn.loading .btn-loader { display: block; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .notification { position: fixed; top: 90px; right: 20px; padding: 16px 24px; border-radius: 12px; font-weight: 500; z-index: 2000; transform: translateX(400px); transition: all 0.3s ease; box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
+        .notification.show { transform: translateX(0); }
+        .notification.error { background: #ef4444; color: white; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo"><a href="./index.html"><h2>Formu<span class="logic">Logic</span></h2></a></div>
+            <div class="nav-actions"><a href="./formulary_analysis.html" class="back-btn"><i class="fas fa-arrow-left"></i> Back</a></div>
+        </div>
+    </nav>
+    <main class="main-content">
+        <div class="container">
+            <div class="analysis-form-container">
+                <div class="form-header">
+                    <h1>UM Change Analysis</h1>
+                    <p>Select a time period and report type to analyze utilization management changes.</p>
+                </div>
+                <form id="analysisForm">
+                    <div class="input-group">
+                        <label for="comparisonPeriod">Comparison Period</label>
+                        <select id="comparisonPeriod" name="comparisonPeriod">
+                            <option value="june-to-july">June to July</option>
+                            <option value="july-to-august">July to August</option>
+                            <option value="june-to-august">June to August</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label for="analysisType">Analysis Type</label>
+                        <select id="analysisType" name="analysisType">
+                            <option value="insights">Insights & Recommendations</option>
+                            <option value="trends">Trend Analysis</option>
+                            <option value="impact">Impact Distribution</option>
+                            <option value="overview">Changes Overview</option>
+                            <option value="pa_changes">Prior Authorization Changes</option>
+                            <option value="st_changes">Step Therapy Changes</option>
+                            <option value="ql_changes">Quantity Limit Changes</option>
+                            <option value="additions">Formulary Additions</option>
+                            <option value="removals">Formulary Removals</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="submit-btn">
+                        <span class="btn-text">Run Analysis</span>
+                        <div class="btn-loader"></div>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </main>
+    <div id="notification" class="notification"></div>
+
+    <script>
+        function navigateTo(page) {
+            const link = document.createElement('a'); link.href = page; document.body.appendChild(link); link.click(); link.remove();
+        }
+
+        class UmChangeAnalysis {
+            constructor() {
+                this.apiBase = 'http://127.0.0.1:8000';
+                this.init();
+            }
+            init() {
+                // this.checkAuth(); 
+                document.getElementById('analysisForm').addEventListener('submit', this.handleAnalysis.bind(this));
+            }
+            checkAuth() {
+                if (!localStorage.getItem('access_token')) {
+                    sessionStorage.setItem('redirectUrl', window.location.href);
+                    navigateTo('./login.html');
+                }
+            }
+            async handleAnalysis(e) {
+                e.preventDefault();
+                const form = e.target;
+                const submitBtn = form.querySelector('.submit-btn');
+                const period = form.comparisonPeriod.value;
+                const type = form.analysisType.value;
+
+                try {
+                    this.setLoading(submitBtn, true);
+                    const response = await this.apiCall(`/api/um-change/${period}/${type}`);
+                    sessionStorage.setItem('umChangeResults', JSON.stringify({ period, type, data: response, timestamp: new Date().toISOString() }));
+                    navigateTo('./um_change_results.html');
+                } catch (error) {
+                    this.showNotification(error.message || 'Analysis failed. Please try again.', 'error');
+                } finally {
+                    this.setLoading(submitBtn, false);
+                }
+            }
+            async apiCall(endpoint) {
+                const token = localStorage.getItem('access_token');
+                const response = await fetch(`${this.apiBase}${endpoint}`, {
+                    method: 'GET',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const result = await response.json();
+                if (!response.ok) {
+                    if (response.status === 401) navigateTo('./login.html');
+                    throw new Error(result.detail || `Request failed with status ${response.status}`);
+                }
+                return result;
+            }
+            setLoading(button, loading) {
+                button.disabled = loading;
+                button.classList.toggle('loading', loading);
+            }
+            showNotification(message, type) {
+                const notification = document.getElementById('notification');
+                notification.textContent = message;
+                notification.className = `notification ${type} show`;
+                setTimeout(() => notification.classList.remove('show'), 4000);
+            }
+        }
+        document.addEventListener('DOMContentLoaded', () => new UmChangeAnalysis());
+    </script>
+</body>
+</html>
+

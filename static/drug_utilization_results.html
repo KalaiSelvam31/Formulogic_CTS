@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FormuLogic - Utilization Forecast Results</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Space Grotesk', sans-serif; background: #f8fffe; color: #333; line-height: 1.6; }
+        .navbar { background: white; border-bottom: 1px solid #e5e7eb; position: fixed; top: 0; width: 100%; z-index: 1000; }
+        .nav-container { max-width: 1400px; margin: 0 auto; padding: 0 30px; display: flex; align-items: center; justify-content: space-between; height: 70px; }
+        .nav-logo a { text-decoration: none; color: inherit; }
+        .nav-logo h2 { font-size: 1.6rem; font-weight: 600; }
+        .nav-logo .logic { color: #4ade80; }
+        .nav-actions .back-btn { background: #f3f4f6; color: #333; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; text-decoration: none; }
+        .main-content { margin-top: 70px; padding: 40px 0; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 0 30px; }
+        .results-header { margin-bottom: 40px; padding: 32px; background: white; border-radius: 16px; box-shadow: 0 4px 16px rgba(0,0,0,0.05); }
+        .header-info h1 { font-size: 2.5rem; font-weight: 700; margin-bottom: 16px; }
+        .analysis-meta { display: flex; gap: 24px; flex-wrap: wrap; color: #666; }
+        .charts-grid { display: grid; grid-template-columns: 1fr; gap: 24px; }
+        @media (min-width: 1024px) { .charts-grid { grid-template-columns: 1fr 1fr; } }
+        .chart-container { background: white; border-radius: 16px; padding: 32px; box-shadow: 0 4px 16px rgba(0,0,0,0.05); }
+        .chart-container h2 { font-size: 1.8rem; margin-bottom: 24px; text-align: center; }
+        .loading-state, .error-state { text-align: center; padding: 80px 20px; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo"><a href="./index.html"><h2>Formu<span class="logic">Logic</span></h2></a></div>
+            <div class="nav-actions"><a href="./features.html" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Features</a></div>
+        </div>
+    </nav>
+    <main class="main-content">
+        <div class="container" id="resultsContainer">
+            <div class="loading-state"><h2>Loading Forecast...</h2></div>
+        </div>
+    </main>
+    <script>
+        function navigateTo(page) {
+            const link = document.createElement('a'); link.href = page; document.body.appendChild(link); link.click(); link.remove();
+        }
+
+        class UtilizationResults {
+            constructor() { this.init(); }
+            init() {
+                // this.checkAuth();
+                this.loadResults();
+            }
+            checkAuth() { if (!localStorage.getItem('access_token')) navigateTo('./login.html'); }
+            
+            loadResults() {
+                const storedResults = sessionStorage.getItem('utilizationForecastResults');
+                if (storedResults) {
+                    this.displayResults(JSON.parse(storedResults));
+                } else {
+                    this.displayError('No forecast results found.');
+                }
+            }
+
+            displayResults(results) {
+                const { drug_name, data, timestamp } = results;
+                const container = document.getElementById('resultsContainer');
+                
+                const historicalYears = data.historical.years;
+                const forecastYears = data.forecast_years;
+                const allYears = [...historicalYears, ...forecastYears];
+                
+                const claimsData = [...data.historical.Total_Claims, ...data.forecast.Total_Claims];
+                const beneficiariesData = [...data.historical.Total_Beneficiaries, ...data.forecast.Total_Beneficiaries];
+
+                container.innerHTML = `
+                    <div class="results-header">
+                        <h1>Utilization Forecast for ${data.drug}</h1>
+                        <div class="analysis-meta">
+                            <span><strong>Generated:</strong> ${new Date(timestamp).toLocaleString()}</span>
+                        </div>
+                    </div>
+                    <div class="charts-grid">
+                        <div class="chart-container">
+                            <h2>Total Claims Forecast</h2>
+                            <canvas id="claimsChart"></canvas>
+                        </div>
+                        <div class="chart-container">
+                            <h2>Total Beneficiaries Forecast</h2>
+                            <canvas id="beneficiariesChart"></canvas>
+                        </div>
+                    </div>
+                `;
+                
+                this.renderChart('claimsChart', allYears, historicalYears.length, claimsData, 'Total Claims');
+                this.renderChart('beneficiariesChart', allYears, historicalYears.length, beneficiariesData, 'Total Beneficiaries');
+            }
+            
+            renderChart(canvasId, labels, forecastStartIndex, data, label) {
+                const ctx = document.getElementById(canvasId).getContext('2d');
+                const historicalData = data.slice(0, forecastStartIndex);
+                const forecastData = data.slice(forecastStartIndex - 1); // Overlap one point for smooth line
+                const forecastLabels = labels.slice(forecastStartIndex - 1);
+
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: 'Historical Data',
+                                data: historicalData,
+                                borderColor: '#4ade80',
+                                backgroundColor: 'rgba(74, 222, 128, 0.1)',
+                                fill: false,
+                                tension: 0.1
+                            },
+                            {
+                                label: 'Forecasted Data',
+                                data: this.createForecastDataset(forecastData, forecastStartIndex, labels.length),
+                                borderColor: '#2dd4bf',
+                                borderDash: [5, 5],
+                                fill: false,
+                                tension: 0.1
+                            }
+                        ]
+                    }
+                });
+            }
+
+            createForecastDataset(data, startIndex, totalLength) {
+                const dataset = new Array(totalLength).fill(null);
+                data.forEach((value, index) => {
+                    dataset[startIndex - 1 + index] = value;
+                });
+                return dataset;
+            }
+
+            displayError(message) {
+                document.getElementById('resultsContainer').innerHTML = `<div class="error-state"><h2>Error</h2><p>${message}</p></div>`;
+            }
+        }
+        document.addEventListener('DOMContentLoaded', () => new UtilizationResults());
+    </script>
+</body>
+</html>

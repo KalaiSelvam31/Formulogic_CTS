@@ -25,13 +25,16 @@ class User(Base):
     email = Column(String(100), unique=True, index=True)
     password = Column(String(200))
     is_verified = Column(Boolean, default=False)
+    role = Column(String(20), default="user", nullable=False)
 
 
     regional_disparity_logs = relationship("RegionalDisparityAnalysis", back_populates="user")
     formulary_detail_logs = relationship("FormularyDetailAnalysis", back_populates="user")
     therapeutic_equivalent_logs = relationship("TherapeuticEquivalentLog", back_populates="user")
 
-
+    @property
+    def is_superuser(self):
+        return self.role == "superuser"
 
 
 class RegionalDisparityAnalysis(Base):
@@ -99,4 +102,5 @@ class TherapeuticEquivalentAlternative(Base):
     cost_difference = Column(Float)
     percentage_reduction = Column(String(20))
 
-    log_entry = relationship("TherapeuticEquivalentLog", back_populates="alternatives")
+    log_entry   = relationship("TherapeuticEquivalentLog", back_populates="alternatives")
+

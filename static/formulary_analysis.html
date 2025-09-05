@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FormuLogic - Formulary Impact Analysis</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #f8fffe;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        /* Navigation */
+        .navbar {
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 70px;
+        }
+        
+        .nav-logo a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .nav-logo h2 {
+            font-size: 1.6rem;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        .nav-logo .logic {
+            color: #4ade80;
+        }
+        
+        .nav-actions .back-btn {
+            background: #f3f4f6;
+            color: #333;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Space Grotesk', sans-serif;
+            text-decoration: none;
+        }
+        
+        .nav-actions .back-btn:hover {
+            background: #e5e7eb;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-top: 70px;
+            min-height: calc(100vh - 70px);
+            padding: 60px 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 30px;
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .page-header h1 {
+            font-size: 2.8rem;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 12px;
+        }
+
+        .page-header p {
+            font-size: 1.2rem;
+            color: #666;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .models-grid {
+            min-width: 100%;
+            display: flex;
+           
+            gap: 30px; 
+        }
+        
+        @media (min-width: 768px) {
+            .models-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .model-card {
+            background: white;
+            border-radius: 20px;
+            padding: 32px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+            display: flex;
+            flex-direction: column;
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        
+        .model-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+            border-color: #4ade80;
+        }
+
+        .card-icon {
+            font-size: 2.5rem;
+            color: #4ade80;
+            margin-bottom: 16px;
+        }
+
+        .model-card h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #1a1a1a;
+        }
+
+        .model-card p {
+            color: #666;
+            margin-bottom: 24px;
+            flex-grow: 1;
+        }
+
+        .action-btn {
+            background: #4ade80;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-weight: 600;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        .model-card:hover .action-btn {
+            background: #22c55e;
+        }
+        
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <a href="./index.html">
+                    <h2>Formu<span class="logic">Logic</span></h2>
+                </a>
+            </div>
+            <div class="nav-actions">
+                <a href="./features.html" class="back-btn">
+                    <i class="fas fa-arrow-left"></i> Back to Features
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+             <div class="page-header">
+                <h1>Real-time Formulary Impact Analysis</h1>
+                <p>
+                    Instantly assess the financial and clinical implications of formulary changes. Choose an analysis model below to get started.
+                </p>
+            </div>
+            
+            <div class="models-grid">
+                <!-- Model 1: Regional Disparity -->
+                <a href="./regional_analysis.html" class="model-card">
+                    <div class="card-icon"><i class="fas fa-globe-americas"></i></div>
+                    <h3>Regional Disparity Analysis</h3>
+                    <p>Analyze drug coverage disparities, tiers, and requirements across different states and regions.</p>
+                    <div class="action-btn">Start Analysis</div>
+                </a>
+                
+                <!-- Model 2: Formulary Analysis -->
+                <a href="./formulary_input.html" class="model-card">
+                    <div class="card-icon"><i class="fas fa-clipboard-list"></i></div>
+                    <h3>Formulary Analysis</h3>
+                    <p>Get detailed formulary information for a specific drug, including plan status, costs, and restrictions.</p>
+                    <div class="action-btn">Start Analysis</div>
+                </a>
+
+                <a href="./um_change_analysis.html" class="model-card">
+                    <div class="card-icon"><i class="fas fa-clipboard-list"></i></div>
+                    <h3>Utilization Management Change Prediction</h3>
+                    <p>Retrieves a specific section of a pre-computed Utilization Management Change analysis.</p>
+                    <div class="action-btn">Start Analysis</div>
+                </a>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        // Navigation helper
+        function navigateTo(page) {
+            const link = document.createElement('a');
+            link.href = page;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        }
+
+        // Auth check
+        (function checkAuth() {
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                sessionStorage.setItem('redirectUrl', window.location.href);
+                navigateTo('./login.html');
+            }
+        })();
+    </script>
+</body>
+</html>
+

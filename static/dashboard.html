@@ -1,0 +1,1179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FormuLogic - Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #f8fffe;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        /* Navigation */
+        .navbar {
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 70px;
+        }
+        
+        .nav-logo a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .nav-logo h2 {
+            font-size: 1.6rem;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        .nav-logo .logic {
+            color: #4ade80;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 32px;
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: #666;
+            font-weight: 500;
+            font-size: 0.95rem;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link.active,
+        .nav-link:hover {
+            color: #4ade80;
+            background: rgba(74, 222, 128, 0.1);
+        }
+
+        .user-profile {
+            position: relative;
+        }
+
+        .profile-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: none;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .profile-btn:hover {
+            background: #f3f4f6;
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            background: #4ade80;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 14px;
+        }
+
+        .dropdown-arrow {
+            font-size: 0.7rem;
+            color: #666;
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            min-width: 150px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+        }
+
+        .dropdown-menu.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .dropdown-item {
+            display: block;
+            padding: 12px 16px;
+            text-decoration: none;
+            color: #333;
+            font-size: 0.9rem;
+            transition: background 0.3s ease;
+        }
+
+        .dropdown-item:hover {
+            background: #f3f4f6;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-top: 70px;
+            min-height: calc(100vh - 70px);
+            padding: 40px 0;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 30px;
+        }
+
+        .page-header {
+            margin-bottom: 40px;
+        }
+
+        .page-header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 8px;
+        }
+
+        .page-header p {
+            font-size: 1.1rem;
+            color: #666;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .stat-icon {
+            font-size: 2rem;
+            width: 60px;
+            height: 60px;
+            background: rgba(74, 222, 128, 0.1);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #4ade80;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        /* Action Grid */
+        .action-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 24px;
+            margin-bottom: 50px;
+        }
+
+        .action-card {
+            background: white;
+            border-radius: 20px;
+            padding: 32px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .action-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+        }
+
+        .action-card.primary {
+            background: linear-gradient(135deg, #4ade80, #22c55e);
+            color: white;
+        }
+
+        .action-card.primary:hover {
+            border-color: #16a34a;
+        }
+
+        .action-card.secondary {
+            border-color: #e5e7eb;
+        }
+
+        .action-card.secondary:hover {
+            border-color: #4ade80;
+        }
+
+        .card-icon {
+            font-size: 3rem;
+            margin-bottom: 16px;
+        }
+
+        .card-content h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .card-content p {
+            margin-bottom: 24px;
+            opacity: 0.9;
+        }
+
+        .action-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: inherit;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .action-card.secondary .action-btn {
+            background: #4ade80;
+            border-color: #4ade80;
+            color: white;
+        }
+
+        .action-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        /* Recent Section */
+        .recent-section {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .section-header h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        .view-all-btn {
+            background: none;
+            border: 1px solid #e5e7eb;
+            color: #666;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .view-all-btn:hover {
+            border-color: #4ade80;
+            color: #4ade80;
+        }
+
+        .analyses-table {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        th {
+            font-weight: 600;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        td {
+            color: #333;
+        }
+
+        .status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .status.success {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .status.pending {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .status.error {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .view-btn {
+            background: #f3f4f6;
+            border: none;
+            color: #666;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .view-btn:hover {
+            background: #4ade80;
+            color: white;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: modalSlide 0.3s ease-out;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 24px 24px 0;
+        }
+
+        .modal-header h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+            padding: 8px;
+            border-radius: 8px;
+            transition: background 0.3s ease;
+        }
+
+        .close-btn:hover {
+            background: #f3f4f6;
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .input-group {
+            margin-bottom: 24px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #4ade80;
+        }
+
+        .help-text {
+            color: #666;
+            font-size: 0.8rem;
+            margin-top: 4px;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        .cancel-btn {
+            background: none;
+            border: 1px solid #e5e7eb;
+            color: #666;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .cancel-btn:hover {
+            border-color: #d1d5db;
+        }
+
+        .submit-btn {
+            background: #4ade80;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .submit-btn:hover {
+            background: #22c55e;
+        }
+
+        .submit-btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        .btn-loader {
+            display: none;
+            width: 16px;
+            height: 16px;
+            border: 2px solid transparent;
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .submit-btn.loading .btn-text {
+            display: none;
+        }
+
+        .submit-btn.loading .btn-loader {
+            display: block;
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            z-index: 3000;
+            backdrop-filter: blur(5px);
+        }
+
+        .loading-overlay.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid #e5e7eb;
+            border-top: 4px solid #4ade80;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 16px;
+        }
+
+        /* Notification */
+        .notification {
+            position: fixed;
+            top: 90px;
+            right: 20px;
+            padding: 16px 24px;
+            border-radius: 12px;
+            font-weight: 500;
+            z-index: 4000;
+            transform: translateX(400px);
+            transition: all 0.3s ease;
+            max-width: 350px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            background: #4ade80;
+            color: white;
+        }
+
+        .notification.error {
+            background: #ef4444;
+            color: white;
+        }
+
+        .notification.info {
+            background: #3b82f6;
+            color: white;
+        }
+
+        /* Animations */
+        @keyframes modalSlide {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .nav-menu {
+                display: none;
+            }
+            
+            .container {
+                padding: 0 20px;
+            }
+            
+            .page-header h1 {
+                font-size: 2rem;
+            }
+            
+            .action-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .modal-content {
+                margin: 20px;
+                width: calc(100% - 40px);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .section-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <a href="./dashboard.html">
+                    <h2>Formu<span class="logic">Logic</span></h2>
+                </a>
+            </div>
+            <div class="nav-menu">
+                <a href="#" class="nav-link active">Dashboard</a>
+                <a href="#" class="nav-link">Analytics</a>
+                <a href="#" class="nav-link">Reports</a>
+                <a href="#" class="nav-link">Settings</a>
+            </div>
+            <div class="nav-actions">
+                <div class="user-profile">
+                    <div class="profile-dropdown">
+                        <button class="profile-btn" id="profileBtn">
+                            <span class="user-avatar">
+                                <i class="fas fa-user"></i>
+                            </span>
+                            <span class="user-name" id="userName">User</span>
+                            <span class="dropdown-arrow">▼</span>
+                        </button>
+                        <div class="dropdown-menu" id="profileMenu">
+                            <a href="#" class="dropdown-item">Profile</a>
+                            <a href="#" class="dropdown-item">Settings</a>
+                            <a href="#" class="dropdown-item" onclick="logout()">Logout</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <!-- Header -->
+            <div class="page-header">
+                <h1>PBM Analytics Dashboard</h1>
+                <p>Optimize formulary decisions with real-time insights</p>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 class="stat-number" id="totalAnalyses">0</h3>
+                        <p class="stat-label">Total Analyses</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-dollar-sign"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 class="stat-number">12%</h3>
+                        <p class="stat-label">Avg Cost Reduction</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 class="stat-number">98%</h3>
+                        <p class="stat-label">Satisfaction Rate</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 class="stat-number">100%</h3>
+                        <p class="stat-label">Data Security</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Cards -->
+            <div class="action-grid">
+                <div class="action-card primary" onclick="startAnalysis('regional')">
+                    <div class="card-icon">
+                        <i class="fas fa-globe-americas"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>Regional Disparity Analysis</h3>
+                        <p>Analyze drug coverage disparities across different states and regions</p>
+                        <button class="action-btn">Start Analysis</button>
+                    </div>
+                </div>
+                
+                <div class="action-card secondary" onclick="startAnalysis('formulary')">
+                    <div class="card-icon">
+                        <i class="fas fa-pills"></i>
+                    </div>
+                    <div class="content">
+                        <h3>Formulary Analysis</h3>
+                        <p>Detailed analysis of drug formulary coverage, tiers, and restrictions</p>
+                        <button class="action-btn">Start Analysis</button>
+                    </div>
+                </div>
+                
+                <div class="action-card secondary" onclick="startAnalysis('recommendation')">
+                    <div class="card-icon">
+                        <i class="fas fa-lightbulb"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>Drug Recommendations</h3>
+                        <p>Get alternative drug recommendations based on RxCUI</p>
+                        <button class="action-btn">Get Recommendations</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Analyses -->
+            <div class="recent-section">
+                <div class="section-header">
+                    <h2>Recent Analyses</h2>
+                    <button class="view-all-btn">View All</button>
+                </div>
+                <div class="analyses-table">
+                    <table id="recentAnalyses">
+                        <thead>
+                            <tr>
+                                <th>Drug (RxCUI)</th>
+                                <th>Analysis Type</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Dynamic content will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Analysis Modal -->
+    <div class="modal" id="analysisModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Drug Analysis</h3>
+                <button class="close-btn" onclick="closeModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="analysisForm">
+                    <div class="input-group">
+                        <label for="rxcui">RxCUI (Drug Identifier)</label>
+                        <input type="text" id="rxcui" name="rxcui" placeholder="Enter RxCUI (e.g., 161)" required>
+                        <small class="help-text">Enter the RxNorm Concept Unique Identifier for the drug</small>
+                    </div>
+                    
+                    <div class="input-group" id="topNGroup" style="display: none;">
+                        <label for="topN">Number of Recommendations</label>
+                        <input type="number" id="topN" name="topN" placeholder="e.g., 2" min="1" max="10" value="2">
+                        <small class="help-text">Number of alternative drugs to recommend</small>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" class="cancel-btn" onclick="closeModal()">Cancel</button>
+                        <button type="submit" class="submit-btn">
+                            <span class="btn-text">Analyze Drug</span>
+                            <span class="btn-loader"></span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <p>Analyzing drug data...</p>
+    </div>
+
+    <!-- Notification -->
+    <div id="notification" class="notification"></div>
+
+    <script>
+        class Dashboard {
+            constructor() {
+                this.apiBase = 'http://127.0.0.1:8000';
+                this.currentAnalysisType = null;
+                this.init();
+            }
+
+            init() {
+                this.checkAuth();
+                this.bindEvents();
+                this.loadUserData();
+                this.loadRecentAnalyses();
+            }
+
+            checkAuth() {
+                const token = localStorage.getItem('access_token');
+                if (!token) {
+                    window.location.href = './login.html';
+                    return;
+                }
+            }
+
+            bindEvents() {
+                // Profile dropdown
+                document.getElementById('profileBtn').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const menu = document.getElementById('profileMenu');
+                    menu.classList.toggle('show');
+                });
+
+                // Close dropdown when clicking outside
+                document.addEventListener('click', () => {
+                    const menu = document.getElementById('profileMenu');
+                    menu.classList.remove('show');
+                });
+
+                // Analysis form
+                document.getElementById('analysisForm').addEventListener('submit', (e) => {
+                    this.handleAnalysis(e);
+                });
+
+                // Modal close events
+                document.getElementById('analysisModal').addEventListener('click', (e) => {
+                    if (e.target.id === 'analysisModal') {
+                        this.closeModal();
+                    }
+                });
+
+                // ESC key to close modal
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') {
+                        this.closeModal();
+                    }
+                });
+            }
+
+            loadUserData() {
+                // Extract username from token (simplified - in production, decode JWT properly)
+                const token = localStorage.getItem('access_token');
+                if (token) {
+                    try {
+                        const payload = JSON.parse(atob(token.split('.')[1]));
+                        document.getElementById('userName').textContent = payload.sub || 'User';
+                    } catch (error) {
+                        console.error('Error decoding token:', error);
+                    }
+                }
+            }
+
+            async loadRecentAnalyses() {
+                // Sample data - in production, fetch from user analyses endpoint
+                const sampleData = [
+                    {
+                        rxcui: '161',
+                        type: 'Regional Analysis',
+                        status: 'completed',
+                        date: '2025-01-09',
+                        id: 1
+                    },
+                    {
+                        rxcui: '1049502',
+                        type: 'Formulary Analysis',
+                        status: 'pending',
+                        date: '2025-01-09',
+                        id: 2
+                    }
+                ];
+
+                this.displayAnalyses(sampleData);
+                document.getElementById('totalAnalyses').textContent = sampleData.length;
+            }
+
+            displayAnalyses(analyses) {
+                const tbody = document.querySelector('#recentAnalyses tbody');
+                tbody.innerHTML = '';
+
+                analyses.forEach(analysis => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${analysis.rxcui}</td>
+                        <td>${analysis.type}</td>
+                        <td><span class="status ${analysis.status}">${analysis.status.charAt(0).toUpperCase() + analysis.status.slice(1)}</span></td>
+                        <td>${new Date(analysis.date).toLocaleDateString()}</td>
+                        <td>
+                            <button class="view-btn" onclick="dashboard.viewResults('${analysis.id}', '${analysis.type}')">
+                                View Results
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            }
+
+            startAnalysis(type) {
+                this.currentAnalysisType = type;
+                const modal = document.getElementById('analysisModal');
+                const title = document.getElementById('modalTitle');
+                const topNGroup = document.getElementById('topNGroup');
+                
+                if (type === 'regional') {
+                    title.textContent = 'Regional Disparity Analysis';
+                    topNGroup.style.display = 'none';
+                } else if (type === 'formulary') {
+                    title.textContent = 'Formulary Analysis';
+                    topNGroup.style.display = 'none';
+                } else if (type === 'recommendation') {
+                    title.textContent = 'Drug Recommendations';
+                    topNGroup.style.display = 'block';
+                }
+                modal.classList.add('show');
+                
+                // Focus on input
+                setTimeout(() => {
+                    document.getElementById('rxcui').focus();
+                }, 100);
+            }
+
+            closeModal() {
+                const modal = document.getElementById('analysisModal');
+                modal.classList.remove('show');
+                
+                // Reset form
+                document.getElementById('analysisForm').reset();
+                this.currentAnalysisType = null;
+            }
+
+            async handleAnalysis(e) {
+                e.preventDefault();
+                
+                const form = e.target;
+                const submitBtn = form.querySelector('.submit-btn');
+                const rxcui = form.rxcui.value.trim();
+
+                if (!rxcui) {
+                    this.showNotification('Please enter a valid RxCUI', 'error');
+                    return;
+                }
+
+                try {
+                    this.setLoading(submitBtn, true);
+                    this.showLoadingOverlay(true);
+
+                    let endpoint;
+                    if (this.currentAnalysisType === 'regional') {
+                        endpoint = '/api/analyze';
+                    } else if (this.currentAnalysisType === 'formulary') {
+                        endpoint = '/api/formulary-analyser';
+                    } else if (this.currentAnalysisType === 'recommendation') {
+                        endpoint = '/api/recommend-drug';
+                    }
+                    let requestData = { rxcui };
+                    if (this.currentAnalysisType === 'recommendation') {
+                        requestData.top_n = parseInt(form.topN.value) || 2;
+                    }
+                    const response = await this.apiCall(endpoint, 'POST', requestData);
+
+                    this.showNotification('Analysis completed successfully!', 'success');
+                    this.closeModal();
+                    this.showLoadingOverlay(false);
+                    
+                    // Navigate to results page with the response data
+                    this.navigateToResults(rxcui, this.currentAnalysisType, response);
+                    
+                } catch (error) {
+                    this.showNotification(error.message || 'Analysis failed. Please try again.', 'error');
+                } finally {
+                    this.setLoading(submitBtn, false);
+                    this.showLoadingOverlay(false);
+                }
+            }
+
+            navigateToResults(rxcui, analysisType, data) {
+                // Store results in sessionStorage for the results page
+                sessionStorage.setItem('analysisResults', JSON.stringify({
+                    rxcui,
+                    analysisType,
+                    data,
+                    timestamp: new Date().toISOString()
+                }));
+                
+                window.location.href = './results.html';
+            }
+
+            viewResults(id, type) {
+                // This would typically fetch specific analysis results
+                this.showNotification('Loading analysis results...', 'info');
+                // Navigate to results page with ID
+                window.location.href = `./results.html?id=${id}&type=${type}`;
+            }
+
+            async apiCall(endpoint, method, data) {
+                const token = localStorage.getItem('access_token');
+                
+                try {
+                    const response = await fetch(`${this.apiBase}${endpoint}`, {
+                        method: method,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify(data)
+                    });
+
+                    // Handle different response types
+                    let result;
+                    const contentType = response.headers.get('content-type');
+                    if (contentType && contentType.includes('application/json')) {
+                        result = await response.json();
+                    } else {
+                        result = await response.text();
+                    }
+                    
+                    if (!response.ok) {
+                        if (response.status === 401) {
+                            localStorage.removeItem('access_token');
+                            this.showNotification('Session expired. Please log in again.', 'error');
+                            setTimeout(() => {
+                                window.location.href = './login.html';
+                            }, 2000);
+                            return;
+                        }
+                        
+                        const errorMessage = result.detail || result.message || `Request failed with status ${response.status}`;
+                        throw new Error(errorMessage);
+                    }
+                    
+                    return result;
+                } catch (error) {
+                    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                        throw new Error('Network error. Please check your connection and try again.');
+                    }
+                    throw error;
+                }
+            }
+
+            setLoading(button, loading) {
+                if (loading) {
+                    button.classList.add('loading');
+                    button.disabled = true;
+                } else {
+                    button.classList.remove('loading');
+                    button.disabled = false;
+                }
+            }
+
+            showLoadingOverlay(show) {
+                const overlay = document.getElementById('loadingOverlay');
+                if (show) {
+                    overlay.classList.add('show');
+                } else {
+                    overlay.classList.remove('show');
+                }
+            }
+
+            showNotification(message, type = 'info') {
+                const notification = document.getElementById('notification');
+                notification.textContent = message;
+                notification.className = `notification ${type} show`;
+                
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                }, 5000);
+            }
+        }
+
+        // Global functions
+        function startAnalysis(type) {
+            dashboard.startAnalysis(type);
+        }
+
+        function closeModal() {
+            dashboard.closeModal();
+        }
+
+        function logout() {
+            localStorage.removeItem('access_token');
+            sessionStorage.clear();
+            window.location.href = './index.html';
+        }
+
+        // Initialize dashboard
+        const dashboard = new Dashboard();
+    </script>
+</body>
+</html>
+

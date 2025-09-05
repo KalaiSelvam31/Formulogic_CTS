@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FormuLogic - Therapeutic Equivalence Results</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Space Grotesk', sans-serif; background: #f8fffe; color: #333; line-height: 1.6; }
+        .navbar { background: white; border-bottom: 1px solid #e5e7eb; position: fixed; top: 0; width: 100%; z-index: 1000; }
+        .nav-container { max-width: 1400px; margin: 0 auto; padding: 0 30px; display: flex; align-items: center; justify-content: space-between; height: 70px; }
+        .nav-logo a { text-decoration: none; color: inherit; }
+        .nav-logo h2 { font-size: 1.6rem; font-weight: 600; }
+        .nav-logo .logic { color: #4ade80; }
+        .nav-actions .back-btn { background: #f3f4f6; color: #333; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; text-decoration: none; }
+        .main-content { margin-top: 70px; padding: 40px 0; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 0 30px; }
+        .results-header { margin-bottom: 40px; padding: 32px; background: white; border-radius: 16px; box-shadow: 0 4px 16px rgba(0,0,0,0.05); }
+        .header-info h1 { font-size: 2.5rem; font-weight: 700; margin-bottom: 16px; }
+        .analysis-meta { display: flex; gap: 24px; flex-wrap: wrap; color: #666; }
+        .results-card { background: white; border-radius: 16px; padding: 32px; box-shadow: 0 4px 16px rgba(0,0,0,0.05); }
+        .results-card h2 { font-size: 1.8rem; margin-bottom: 24px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e5e7eb; }
+        th { font-weight: 600; }
+        .loading-state, .error-state { text-align: center; padding: 80px 20px; }
+        .analyze-btn { background-color: #4ade80; color: white; padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; }
+        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); }
+        .modal-content { background-color: #fefefe; margin: 10% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 800px; border-radius: 16px; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px; border-bottom: 1px solid #ddd; }
+        .close-btn { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .comparison-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+        .comparison-card { padding: 15px; border-radius: 8px; background-color: #f9fafb; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo"><a href="./index.html"><h2>Formu<span class="logic">Logic</span></h2></a></div>
+            <div class="nav-actions"><a href="./features.html" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Features</a></div>
+        </div>
+    </nav>
+    <main class="main-content">
+        <div class="container" id="resultsContainer">
+            <div class="loading-state"><h2>Loading Results...</h2></div>
+        </div>
+    </main>
+    
+    <!-- Analysis Modal -->
+    <div id="analysisModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Formulary Impact Analysis</h2>
+                <span class="close-btn">&times;</span>
+            </div>
+            <div id="modalBody" class="modal-body">
+                <p>Loading analysis...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function navigateTo(page) {
+            const link = document.createElement('a'); link.href = page; document.body.appendChild(link); link.click(); link.remove();
+        }
+
+        class TherapeuticResultsPage {
+            constructor() {
+                this.apiBase = 'http://127.0.0.1:8000';
+                this.originalDrugRxcui = null;
+                this.init();
+            }
+            init() {
+                this.loadResults();
+                this.initModal();
+            }
+            
+            loadResults() {
+                const storedResults = sessionStorage.getItem('therapeuticResults');
+                if (storedResults) {
+                    this.displayResults(JSON.parse(storedResults));
+                } else {
+                    this.displayError('No analysis results found.');
+                }
+            }
+
+            displayResults(results) {
+                const { data, timestamp } = results;
+                this.originalDrugRxcui = data.input_rxcui;
+                const container = document.getElementById('resultsContainer');
+                
+                let tableRows = '<tr><td colspan="6">No alternatives found.</td></tr>';
+                if (data.alternatives && data.alternatives.length > 0) {
+                    tableRows = data.alternatives.map(alt => `
+                        <tr>
+                            <td>${alt.Ingredient}</td>
+                            <td>${alt.Alternative_RXCUI}</td>
+                            <td>$${alt.Alternative_cost.toFixed(2)}</td>
+                            <td>$${alt.Cost_difference.toFixed(2)}</td>
+                            <td>${alt.Percentage_reduction}</td>
+                            <td><button class="analyze-btn" data-rxcui="${alt.Alternative_RXCUI}">Analyze Impact</button></td>
+                        </tr>
+                    `).join('');
+                }
+
+                container.innerHTML = `
+                    <div class="results-header">
+                        <h1>Therapeutic Equivalence Results</h1>
+                        <div class="analysis-meta">
+                            <span><strong>Original RxCUI:</strong> ${data.input_rxcui}</span>
+                            <span><strong>Original Cost:</strong> $${data.input_cost.toFixed(2)}</span>
+                        </div>
+                    </div>
+                    <div class="results-card">
+                        <h2>Alternatives for ${data.ingredient}</h2>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Ingredient</th>
+                                    <th>Alternative RXCUI</th>
+                                    <th>Alternative Cost</th>
+                                    <th>Cost Difference</th>
+                                    <th>Percentage Reduction</th>
+                                    <th>Formulary Impact</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${tableRows}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+                
+                document.querySelectorAll('.analyze-btn').forEach(button => {
+                    button.addEventListener('click', (e) => this.openAnalysisModal(e.target.dataset.rxcui));
+                });
+            }
+
+            initModal() {
+                const modal = document.getElementById('analysisModal');
+                const closeBtn = document.querySelector('.close-btn');
+                closeBtn.onclick = () => modal.style.display = "none";
+                window.onclick = (event) => {
+                    if (event.target == modal) {
+                        modal.style.display = "none";
+                    }
+                }
+            }
+
+            async openAnalysisModal(alternativeRxcui) {
+                const modal = document.getElementById('analysisModal');
+                const modalBody = document.getElementById('modalBody');
+                modal.style.display = "block";
+                modalBody.innerHTML = '<p>Fetching analysis for original and alternative drugs...</p>';
+
+                try {
+                    const [originalData, alternativeData] = await Promise.all([
+                        this.apiCall(`/api/analyze`, 'POST', { rxcui: this.originalDrugRxcui.toString() }),
+                        this.apiCall(`/api/analyze`, 'POST', { rxcui: alternativeRxcui.toString() })
+                    ]);
+                    
+                    modalBody.innerHTML = this.createComparisonHTML(originalData, alternativeData);
+                } catch (error) {
+                    modalBody.innerHTML = `<p class="error-state">Could not fetch impact analysis: ${error.message}</p>`;
+                }
+            }
+            
+            createComparisonHTML(original, alternative) {
+                return `
+                    <div class="comparison-grid">
+                        <div class="comparison-card">
+                            <h3>Original Drug (RxCUI: ${original.rxcui})</h3>
+                            <p><strong>Tier:</strong> ${original.drug_tier}</p>
+                            <p><strong>Prior Auth:</strong> ${original.prior_auth_required}</p>
+                            <p><strong>Step Therapy:</strong> ${original.step_therapy_required}</p>
+                            <p><strong>Coverage Gap:</strong> ${original.coverage_gap_percentage}</p>
+                        </div>
+                        <div class="comparison-card">
+                            <h3>Alternative Drug (RxCUI: ${alternative.rxcui})</h3>
+                            <p><strong>Tier:</strong> ${alternative.drug_tier}</p>
+                            <p><strong>Prior Auth:</strong> ${alternative.prior_auth_required}</p>
+                            <p><strong>Step Therapy:</strong> ${alternative.step_therapy_required}</p>
+                            <p><strong>Coverage Gap:</strong> ${alternative.coverage_gap_percentage}</p>
+                        </div>
+                    </div>
+                `;
+            }
+
+            async apiCall(endpoint, method, data) {
+                const token = localStorage.getItem('access_token');
+                const response = await fetch(`${this.apiBase}${endpoint}`, {
+                    method, headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.detail || 'API request failed');
+                return result;
+            }
+
+            displayError(message) {
+                document.getElementById('resultsContainer').innerHTML = `<div class="error-state"><h2>Error</h2><p>${message}</p></div>`;
+            }
+        }
+        document.addEventListener('DOMContentLoaded', () => new TherapeuticResultsPage());
+    </script>
+</body>
+</html>
+

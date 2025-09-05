@@ -14,19 +14,19 @@ configuration.api_key['api-key'] = API_KEY
 api_instance = sib_api_v3_sdk.TransactionalEmailsApi(sib_api_v3_sdk.ApiClient(configuration))
 
 
-def send_registration_otp_email(user_email: str, otp: str):
+def send_login_otp_email(user_email: str, otp: str):
     sender = {"email": "support@formulogic.systems", "name": "Formulogic Systems"}
     to = [{"email": user_email}]
-    subject = f"Your FormuLogic Verification Code"
+    subject = f"Your FormuLogic Login Verification Code"
 
-    # --- REVERTED DARK THEME HTML ---
+    # --- DARK THEME HTML (same style as above, only wording changed) ---
     html_content = f"""
     <!DOCTYPE html>
     <html lang="en">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Verify Your Email</title>
+        <title>Login Verification</title>
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap');
             body {{
@@ -101,12 +101,12 @@ def send_registration_otp_email(user_email: str, otp: str):
             </div>
             <div class="content">
                 <p>Hello,</p>
-                <p>Welcome to FormuLogic! Please use the following verification code to finish setting up your account. This code is valid for the next 10 minutes.</p>
+                <p>We noticed a login attempt to your account. Please use the following code to verify and complete your login. This code is valid for the next 10 minutes.</p>
                 <div class="otp-code">
-                    <p>Your Verification Code</p>
+                    <p>Your Login Verification Code</p>
                     <h2>{otp}</h2>
                 </div>
-                <p>If you did not attempt to create an account with us, please disregard this email. Your address may have been entered by mistake.</p>
+                <p>If you did not attempt to log in, please secure your account immediately by resetting your password.</p>
                 <p>Thank you,<br>The FormuLogic Team</p>
             </div>
             <div class="footer">
@@ -121,12 +121,11 @@ def send_registration_otp_email(user_email: str, otp: str):
 
     try:
         api_instance.send_transac_email(send_smtp_email)
-        print(f"Registration OTP email sent to {user_email}")
+        print(f"Login OTP email sent to {user_email}")
         return {"success": True}
     except ApiException as e:
-        print(f"Error sending registration email via Brevo: {e}")
+        print(f"Error sending login OTP email via Brevo: {e}")
         return {"success": False, "error": str(e)}
-
 
 def send_password_reset_email(user_email: str, otp: str):
     sender = {"email": "support@formulogic.systems", "name": "Formulogic Systems"}

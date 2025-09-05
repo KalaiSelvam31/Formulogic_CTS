@@ -1,145 +1,154 @@
-import time
-import random
-
-from fastapi import FastAPI, Depends, HTTPException, APIRouter
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from starlette import status
+from fastapi.security import OAuth2PasswordRequestForm
+import bcrypt, random, time
 
-from app.security import create_access_token, hash_password
-from app.database import  User
-import bcrypt
-from app.schemas import UserLogin, Register, VerifyOTP, ForgotPasswordRequest, ResetPasswordRequest, ResendOTPRequest
+from app.database import User
 from app.deps import get_db
-from app.services.Email_service import send_registration_otp_email, send_password_reset_email
-
+from app.schemas import Register, UserLogin, VerifyOTP, ResetPasswordRequest
+from app.security import create_access_token, hash_password, verify_token
+from app.services.Email_service import (
+    send_login_otp_email,
+    send_password_reset_email,
+)
 
 router = APIRouter()
 
 
-unverified_users = {}
+login_otps = {}
 password_reset_requests = {}
+OTP_TTL_SECONDS = 10 * 60
 
+@router.post("/register", summary="Register new user (superuser only)")
+def register(
+    user: Register,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(verify_token),
+):
+    if not current_user.is_superuser:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only superuser can register new users.",
+        )
 
-
-
-@router.post("/register")
-def register(user: Register, db: Session = Depends(get_db)):
-    existing_user = db.query(User).filter(User.email == user.email, User.is_verified == True).first()
+    existing_user = db.query(User).filter(User.email == user.email).first()
     if existing_user:
-        raise HTTPException(status_code=400, detail="A verified account with this email already exists.")
+        raise HTTPException(status_code=400, detail="A user with this email already exists.")
 
     hashed_pw = hash_password(user.password)
-    otp = str(random.randint(100000, 999999))
-    expiry_time = time.time() + (10 * 60)
-
-    unverified_users[user.email] = {
-        "username": user.username,
-        "first_name": user.first_name,
-        "last_name": user.last_name,
-        "password": hashed_pw,
-        "otp": otp,
-        "expiry": expiry_time
-    }
-
-    email_response = send_registration_otp_email(user.email, otp)
-    if not email_response["success"]:
-        raise HTTPException(status_code=500, detail="Failed to send OTP email.")
-
-    return {"message": "Registration initiated. Please check your email for a verification OTP."}
-
-
-@router.post("/verify-otp")
-def verify_otp(request: VerifyOTP, db: Session = Depends(get_db)):
-    temp_user_data = unverified_users.get(request.email)
-
-    if not temp_user_data or time.time() > temp_user_data["expiry"]:
-        raise HTTPException(status_code=400, detail="OTP is invalid or has expired. Please register again.")
-
-    if temp_user_data["otp"] != request.otp:
-        raise HTTPException(status_code=400, detail="Incorrect OTP.")
 
     new_user = User(
-        username=temp_user_data["username"],
-        first_name=temp_user_data["first_name"],
-        last_name=temp_user_data["last_name"],
-        email=request.email,
-        password=temp_user_data["password"],
-        is_verified=True  # Set the user as verified
+        username=user.username,
+        first_name=user.first_name,
+        last_name=user.last_name,
+        email=user.email,
+        password=hashed_pw,
+        is_verified=True,
+        role="user"
     )
 
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
 
-    del unverified_users[request.email]
-
-    return {"message": "Account verified successfully!", "user_id": new_user.id}
+    return {"message": "User created successfully", "user_id": new_user.id}
 
 
 
-@router.post("/resend-otp")
-def resend_otp(request: ResendOTPRequest):
-    """
-    Resends an OTP for either user registration or password reset based on the provided context.
-    """
-    new_otp = str(random.randint(100000, 999999))
-    new_expiry_time = time.time() + (10 * 60)  # Set a new 10-minute expiry
-
-    if request.context == "register":
-        # Check if there's a pending registration for this email
-        if request.email not in unverified_users:
-            raise HTTPException(status_code=404,
-                                detail="No pending registration found for this email. Please register again.")
-
-        # Update the user's OTP and expiry time
-        unverified_users[request.email]["otp"] = new_otp
-        unverified_users[request.email]["expiry"] = new_expiry_time
-
-        # Resend the registration email
-        email_response = send_registration_otp_email(request.email, new_otp)
-        if not email_response["success"]:
-            raise HTTPException(status_code=500, detail="Failed to send OTP email.")
-
-        return {"message": "A new verification OTP has been sent to your email."}
-
-    elif request.context == "forgot_password":
-        # Check if there's a pending password reset request
-        if request.email not in password_reset_requests:
-            raise HTTPException(status_code=404,
-                                detail="No active password reset request found. Please initiate one again.")
-
-        # Update the OTP and expiry time
-        password_reset_requests[request.email]["otp"] = new_otp
-        password_reset_requests[request.email]["expiry"] = new_expiry_time
-
-        # Resend the password reset email
-        email_response = send_password_reset_email(request.email, new_otp)
-        if not email_response["success"]:
-            raise HTTPException(status_code=500, detail="Failed to send OTP email.")
-
-        return {"message": "A new password reset OTP has been sent to your email."}
-
-    else:
-        raise HTTPException(status_code=400, detail="Invalid context provided. Use 'register' or 'forgot_password'.")
-
-
-
-
-
-@router.post("/login")
+@router.post("/login", summary="Login with email/password (sends OTP to email)")
 def login(user: UserLogin, db: Session = Depends(get_db)):
-    db_user = db.query(User).filter(User.username == user.username).first()
-
+    db_user = db.query(User).filter(User.email == user.email).first()
     if not db_user or not bcrypt.checkpw(user.password.encode('utf-8'), db_user.password.encode('utf-8')):
-        raise HTTPException(status_code=401, detail="Invalid username or password")
+        raise HTTPException(status_code=401, detail="Invalid email or password")
 
-    token = create_access_token(data={"sub": db_user.username})
+    # generate OTP
+    otp = str(random.randint(100000, 999999))
+    expiry_time = time.time() + OTP_TTL_SECONDS
+    login_otps[db_user.email] = {"otp": otp, "expiry": expiry_time}
+    print(otp)
+    # send OTP email
+    email_response = send_login_otp_email(db_user.email, otp)
+    if not email_response.get("success"):
+        raise HTTPException(status_code=500, detail="Failed to send login OTP email")
+
+    return {"message": "OTP sent to registered email. Use /verify-login-otp to complete login."}
+
+
+@router.post("/verify-login-otp", summary="Verify login OTP and get JWT token")
+def verify_login_otp(request: VerifyOTP, db: Session = Depends(get_db)):
+    otp_entry = login_otps.get(request.email)
+    if not otp_entry or time.time() > otp_entry["expiry"]:
+        raise HTTPException(status_code=400, detail="OTP is invalid or expired. Please login again to receive a new OTP.")
+
+    if otp_entry["otp"] != request.otp:
+        raise HTTPException(status_code=400, detail="Incorrect OTP.")
+
+    # OTP valid -> issue token
+    user = db.query(User).filter(User.email == request.email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found.")
+
+    if not user.is_verified:
+        raise HTTPException(status_code=403, detail="User account not verified.")
+
+    token = create_access_token(data={"sub": user.username,"role": user.role})
+    del login_otps[request.email]
+
     return {"access_token": token, "token_type": "bearer"}
 
-from fastapi.security import OAuth2PasswordRequestForm
+
+@router.post("/request-password-reset", summary="Request password reset OTP")
+def request_password_reset(email: str, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found.")
+
+    otp = str(random.randint(100000, 999999))
+    expiry_time = time.time() + OTP_TTL_SECONDS
+    password_reset_requests[email] = {"otp": otp, "expiry": expiry_time}
+
+    email_response = send_password_reset_email(email, otp)
+    if not email_response.get("success"):
+        raise HTTPException(status_code=500, detail="Failed to send password reset OTP email")
+
+    return {"message": "Password reset OTP sent to email."}
+
+@router.post("/verify-password-reset-otp", summary="Verify password reset OTP")
+def verify_password_reset_otp(request: VerifyOTP):
+    otp_entry = password_reset_requests.get(request.email)
+    if not otp_entry or time.time() > otp_entry["expiry"]:
+        raise HTTPException(status_code=400, detail="OTP is invalid or expired.")
+
+    if otp_entry["otp"] != request.otp:
+        raise HTTPException(status_code=400, detail="Incorrect OTP.")
+
+    return {"message": "OTP verified successfully."}
+
+@router.post("/reset-password", summary="Reset password after OTP verification")
+def reset_password(request: ResetPasswordRequest, db: Session = Depends(get_db)):
+    otp_entry = password_reset_requests.get(request.email)
+    if not otp_entry or time.time() > otp_entry["expiry"] or otp_entry["otp"] != request.otp:
+        raise HTTPException(status_code=400, detail="Invalid or expired OTP.")
+
+    user = db.query(User).filter(User.email == request.email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found.")
+
+    hashed_pw = hash_password(request.new_password)
+    user.password = hashed_pw
+    db.commit()
+
+    del password_reset_requests[request.email]
+
+    return {"message": "Password has been reset successfully."}
+
+
 
 @router.post("/token", summary="Login for Swagger UI/OAuth2")
-def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+def login_for_access_token(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db)
+):
     db_user = db.query(User).filter(User.username == form_data.username).first()
 
     if not db_user or not bcrypt.checkpw(form_data.password.encode('utf-8'), db_user.password.encode('utf-8')):
@@ -151,48 +160,3 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
 
     token = create_access_token(data={"sub": db_user.username})
     return {"access_token": token, "token_type": "bearer"}
-
-@router.post("/forgot-password")
-def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == request.email, User.is_verified == True).first()
-    if not user:
-        # Return a generic message to prevent user enumeration attacks
-        return {"message": "If an account with this email exists, a password reset OTP has been sent."}
-
-    otp = str(random.randint(100000, 999999))
-    expiry_time = time.time() + (10 * 60)  # OTP valid for 10 minutes
-
-    password_reset_requests[request.email] = {
-        "otp": otp,
-        "expiry": expiry_time
-    }
-
-    email_response = send_password_reset_email(request.email, otp)
-    if not email_response["success"]:
-        raise HTTPException(status_code=500, detail="Failed to send OTP email.")
-
-    return {"message": "If an account with this email exists, a password reset OTP has been sent."}
-
-
-@router.post("/reset-password")
-def reset_password(request: ResetPasswordRequest, db: Session = Depends(get_db)):
-    reset_data = password_reset_requests.get(request.email)
-
-    if not reset_data or time.time() > reset_data["expiry"]:
-        raise HTTPException(status_code=400, detail="OTP is invalid or has expired. Please try again.")
-
-    if reset_data["otp"] != request.otp:
-        raise HTTPException(status_code=400, detail="Incorrect OTP.")
-
-    # Find the user to update their password
-    user_to_update = db.query(User).filter(User.email == request.email).first()
-    if not user_to_update:
-        # Should not happen if forgot-password was called correctly, but good to have a check
-        raise HTTPException(status_code=404, detail="User not found.")
-
-    user_to_update.password = hash_password(request.new_password)
-    db.commit()
-
-    del password_reset_requests[request.email]
-
-    return {"message": "Password has been reset successfully."}

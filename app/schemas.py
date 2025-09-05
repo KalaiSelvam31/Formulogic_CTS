@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field,EmailStr
 
 
 class UserLogin(BaseModel):
-    username: str
+    email: EmailStr
     password: str
 
 class Register(BaseModel):
@@ -127,3 +127,12 @@ class CPMPSavingsResponse(BaseModel):
     potential_cpmp_with_alternative: float
     potential_savings: CPMPSavingsPotential
     message: Optional[str] = None
+
+class ChatRequest(BaseModel):
+    session_id: str
+    role: str
+    message: str
+
+
+class ChatResponse(BaseModel):
+    reply: str

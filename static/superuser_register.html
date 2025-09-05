@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FormuLogic - Superuser Registration</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Space Grotesk', sans-serif; background: #f8fffe; color: #333; line-height: 1.6; }
+        .navbar { background: white; border-bottom: 1px solid #e5e7eb; position: fixed; top: 0; width: 100%; z-index: 1000; }
+        .nav-container { max-width: 1400px; margin: 0 auto; padding: 0 30px; display: flex; align-items: center; justify-content: space-between; height: 70px; }
+        .nav-logo a { text-decoration: none; color: inherit; }
+        .nav-logo h2 { font-size: 1.6rem; font-weight: 600; }
+        .nav-logo .logic { color: #4ade80; }
+        .nav-actions .logout-btn { background: #f3f4f6; color: #333; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; }
+        
+        .main-content { margin-top: 70px; min-height: calc(100vh - 70px); padding: 40px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: start; }
+        
+        .form-container { background: white; border-radius: 20px; padding: 40px; box-shadow: 0 8px 30px rgba(0,0,0,0.1); width: 100%; max-width: 500px; margin: 0 auto; }
+        .form-header { text-align: center; margin-bottom: 32px; }
+        .form-header h1 { font-size: 2.2rem; font-weight: 700; margin-bottom: 8px; }
+        .input-group { margin-bottom: 20px; }
+        .input-group label { display: block; margin-bottom: 8px; font-weight: 600; }
+        .input-group input { width: 100%; padding: 14px; border: 2px solid #e5e7eb; border-radius: 12px; font-size: 1rem; }
+        .submit-btn { width: 100%; background: #4ade80; color: white; border: none; padding: 16px; border-radius: 12px; font-size: 1.1rem; font-weight: 600; cursor: pointer; }
+        
+        .user-list-container { background: white; border-radius: 20px; padding: 40px; box-shadow: 0 8px 30px rgba(0,0,0,0.1); }
+        .user-list-container h2 { text-align: center; margin-bottom: 24px; font-size: 1.8rem; }
+        #userList { list-style: none; padding: 0; }
+        #userList li { background: #f9fafb; padding: 15px; border-radius: 10px; margin-bottom: 10px; border: 1px solid #e5e7eb; }
+        
+        .notification { position: fixed; top: 90px; right: 20px; padding: 16px; border-radius: 8px; color: white; z-index: 100; display: none; }
+        .notification.success { background-color: #4ade80; }
+        .notification.error { background-color: #ef4444; }
+
+        @media (max-width: 900px) {
+            .main-content { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo"><a href="./index.html"><h2>Formu<span class="logic">Logic</span></h2></a></div>
+            <div class="nav-actions">
+                <button id="logoutBtn" class="logout-btn">Logout</button>
+            </div>
+        </div>
+    </nav>
+    <main class="main-content">
+        <div class="form-container">
+            <div class="form-header">
+                <h1>Create New User</h1>
+                <p>For Superuser Use Only</p>
+            </div>
+            <form id="registerForm">
+                <div class="input-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" required>
+                </div>
+                <div class="input-group">
+                    <label for="firstName">First Name</label>
+                    <input type="text" id="firstName" required>
+                </div>
+                 <div class="input-group">
+                    <label for="lastName">Last Name</label>
+                    <input type="text" id="lastName" required>
+                </div>
+                <div class="input-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" required>
+                </div>
+                <div class="input-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" required>
+                </div>
+                <button type="submit" class="submit-btn">Register User</button>
+            </form>
+        </div>
+        <div class="user-list-container">
+            <h2>Recently Created Users</h2>
+            <ul id="userList"></ul>
+        </div>
+    </main>
+    <div id="notification" class="notification"></div>
+
+    <script>
+        function navigateTo(page) {
+            window.location.href = page;
+        }
+
+        class SuperuserRegister {
+            constructor() {
+                this.apiBase = 'http://127.0.0.1:8000';
+                this.createdUsers = [];
+                this.init();
+            }
+            init() {
+                this.checkAuth(); 
+                document.getElementById('registerForm').addEventListener('submit', this.handleRegister.bind(this));
+                document.getElementById('logoutBtn').addEventListener('click', this.logout);
+                this.renderUserList();
+            }
+            checkAuth() {
+                if (!localStorage.getItem('access_token')) {
+                    navigateTo('./login.html');
+                }
+            }
+            logout() {
+                localStorage.removeItem('access_token');
+                navigateTo('./login.html');
+            }
+            async handleRegister(e) {
+                e.preventDefault();
+                const form = e.target;
+                const data = {
+                    username: form.username.value,
+                    first_name: form.firstName.value,
+                    last_name: form.lastName.value,
+                    email: form.email.value,
+                    password: form.password.value,
+                };
+
+                try {
+                    const response = await this.apiCall('/auth/register', 'POST', data);
+                    this.showNotification('User registered successfully!', 'success');
+                    this.createdUsers.push(data);
+                    this.renderUserList();
+                    form.reset();
+                } catch (err) {
+                    this.showNotification(err.message || 'Registration failed.', 'error');
+                }
+            }
+            renderUserList() {
+                const userListEl = document.getElementById('userList');
+                userListEl.innerHTML = '';
+                this.createdUsers.forEach(user => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `<strong>${user.username}</strong><br>${user.email}`;
+                    userListEl.appendChild(li);
+                });
+            }
+            async apiCall(endpoint, method, data) {
+                 const superuserToken = localStorage.getItem('access_token');
+                 if (!superuserToken) {
+                     throw new Error('Authorization failed: Superuser not logged in.');
+                 }
+
+                const response = await fetch(`${this.apiBase}${endpoint}`, {
+                    method, 
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${superuserToken}` 
+                    }, 
+                    body: JSON.stringify(data)
+                });
+                 if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || 'An error occurred');
+                }
+                return response.json();
+            }
+             showNotification(message, type) {
+                const el = document.getElementById('notification');
+                el.textContent = message;
+                el.className = `notification ${type}`;
+                el.style.display = 'block';
+                setTimeout(() => {
+                    el.style.display = 'none';
+                }, 4000);
+            }
+        }
+        document.addEventListener('DOMContentLoaded', () => new SuperuserRegister());
+    </script>
+</body>
+</html>
+

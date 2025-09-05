@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import sys
 import os
 import pickle
-import pandas as pd
+from app.routers import chatbot
 
 # This path fix ensures the server can always find your modules.
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__))))
@@ -109,11 +109,13 @@ app.add_middleware(
 
 # --- Routers ---
 app.include_router(auth.router, prefix="/auth", tags=["Authentication"])
-app.include_router(regional_disparity_analysis.router, prefix="/api", tags=["Analysis"])
-app.include_router(formulary_detail_analysis.router, prefix="/api", tags=["Analysis"])
+app.include_router(regional_disparity_analysis.router, prefix="/api", tags=["Formulary_Impact"])
+app.include_router(formulary_detail_analysis.router, prefix="/api", tags=["Formulary_Impact"])
 app.include_router(therapeutic_equivalence.router, prefix="/api", tags=["Therapeutic Equivalence"])
-app.include_router(um_change_router.router, prefix="/api", tags=["UM Analysis"])
+app.include_router(um_change_router.router, prefix="/api", tags=["Formulary_Impact"])
 app.include_router(drug_utilization_router.router, prefix="/api", tags=["Drug Utilization Forecast"])
+
+app.include_router(chatbot.router, prefix="/api", tags=["chat"])
 
 app.include_router(cpmp_analysis.router, prefix="/api", tags=["CPMP Analysis"])
 @app.get("/")

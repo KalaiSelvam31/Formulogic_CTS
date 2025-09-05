@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FormuLogic - UM Change Results</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Space Grotesk', sans-serif; background: #f8fffe; color: #333; line-height: 1.6; }
+        .navbar { background: white; border-bottom: 1px solid #e5e7eb; position: fixed; top: 0; width: 100%; z-index: 1000; }
+        .nav-container { max-width: 1400px; margin: 0 auto; padding: 0 30px; display: flex; align-items: center; justify-content: space-between; height: 70px; }
+        .nav-logo a { text-decoration: none; color: inherit; }
+        .nav-logo h2 { font-size: 1.6rem; font-weight: 600; }
+        .nav-logo .logic { color: #4ade80; }
+        .nav-actions .back-btn { background: #f3f4f6; color: #333; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; text-decoration: none; }
+        .main-content { margin-top: 70px; padding: 40px 0; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 0 30px; }
+        .results-header { margin-bottom: 40px; padding: 32px; background: white; border-radius: 16px; box-shadow: 0 4px 16px rgba(0,0,0,0.05); }
+        .header-info h1 { font-size: 2.5rem; font-weight: 700; margin-bottom: 16px; }
+        .analysis-meta { display: flex; gap: 24px; flex-wrap: wrap; color: #666; }
+        .results-card { background: white; border-radius: 16px; padding: 32px; box-shadow: 0 4px 16px rgba(0,0,0,0.05); }
+        .results-card h2 { font-size: 1.8rem; margin-bottom: 24px; }
+        .loading-state, .error-state { text-align: center; padding: 80px 20px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e5e7eb; }
+        th { font-weight: 600; }
+        .insight-list { list-style-position: inside; padding-left: 10px; }
+        .insight-list li { margin-bottom: 8px; }
+        .chart-container { max-width: 500px; margin: auto; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo"><a href="./index.html"><h2>Formu<span class="logic">Logic</span></h2></a></div>
+            <div class="nav-actions"><a href="./features.html" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Features</a></div>
+        </div>
+    </nav>
+    <main class="main-content">
+        <div class="container" id="resultsContainer">
+            <div class="loading-state"><h2>Loading Results...</h2></div>
+        </div>
+    </main>
+    <script>
+        function navigateTo(page) {
+            const link = document.createElement('a'); link.href = page; document.body.appendChild(link); link.click(); link.remove();
+        }
+
+        class UmChangeResults {
+            constructor() { this.init(); }
+            init() {
+                // this.checkAuth();
+                this.loadResults();
+            }
+            checkAuth() { if (!localStorage.getItem('access_token')) navigateTo('./login.html'); }
+            
+            loadResults() {
+                const storedResults = sessionStorage.getItem('umChangeResults');
+                if (storedResults) {
+                    this.displayResults(JSON.parse(storedResults));
+                } else {
+                    this.displayError('No analysis results found.');
+                }
+            }
+
+            displayResults(results) {
+                const { period, type, data, timestamp } = results;
+                const container = document.getElementById('resultsContainer');
+                
+                const typeMap = {
+                    'insights': 'Insights & Recommendations', 'trends': 'Trend Analysis', 'impact': 'Impact Distribution',
+                    'overview': 'Changes Overview', 'pa_changes': 'Prior Authorization Changes', 'st_changes': 'Step Therapy Changes',
+                    'ql_changes': 'Quantity Limit Changes', 'additions': 'Formulary Additions', 'removals': 'Formulary Removals'
+                };
+
+                let content = `
+                    <div class="results-header">
+                        <h1>${typeMap[type]}</h1>
+                        <div class="analysis-meta">
+                            <span><strong>Period:</strong> ${period.replace(/-/g, ' ')}</span>
+                            <span><strong>Generated:</strong> ${new Date(timestamp).toLocaleString()}</span>
+                        </div>
+                    </div>
+                    <div class="results-card" id="card-content"></div>
+                `;
+                container.innerHTML = content;
+                
+                const cardContent = document.getElementById('card-content');
+                
+                switch(type) {
+                    case 'insights':
+                        cardContent.innerHTML = `<h2>Insights</h2><ul class="insight-list">${data.insights.map(i => `<li>${i}</li>`).join('')}</ul>
+                                                 <h2>Recommendations</h2><ul class="insight-list">${data.recommendations.map(r => `<li>${r}</li>`).join('')}</ul>`;
+                        break;
+                    case 'impact':
+                        cardContent.innerHTML = `<h2>${data.summary}</h2><div class="chart-container"><canvas id="impactChart"></canvas></div>`;
+                        this.renderImpactChart(data.distribution);
+                        break;
+                    case 'overview':
+                         cardContent.innerHTML = `<h2>${data.summary}</h2><div class="chart-container"><canvas id="overviewChart"></canvas></div>`;
+                        this.renderOverviewChart(data.by_type);
+                        break;
+                    case 'trends':
+                        cardContent.innerHTML = `<h2>Key Trends</h2><ul class="insight-list">${data.key_trends.map(i => `<li>${i}</li>`).join('')}</ul>`;
+                        break;
+                    default: // For pa_changes, st_changes, etc.
+                        cardContent.innerHTML = this.renderChangesTable(data);
+                        break;
+                }
+            }
+            
+            renderChangesTable(data) {
+                if (!data.changes || data.changes.length === 0) return '<h2>No changes found for this category.</h2>';
+                
+                let table = `<h2>Total Changes: ${data.total_changes}</h2>
+                             <table>
+                                <thead>
+                                    <tr>
+                                        <th>RxCUI</th>
+                                        <th>Change Type</th>
+                                        <th>Previous Value</th>
+                                        <th>New Value</th>
+                                        <th>Impact</th>
+                                        <th>Tier Change</th>
+                                    </tr>
+                                </thead>
+                                <tbody>`;
+                data.changes.forEach(c => {
+                    table += `<tr>
+                                <td>${c.rxcui}</td>
+                                <td>${c.change_type}</td>
+                                <td>${c.previous_value}</td>
+                                <td>${c.new_value}</td>
+                                <td>${c.impact}</td>
+                                <td>${c.tier_previous} -> ${c.tier_current}</td>
+                              </tr>`;
+                });
+                table += '</tbody></table>';
+                return table;
+            }
+
+            renderImpactChart(distribution) {
+                const ctx = document.getElementById('impactChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Less Restrictive', 'More Restrictive', 'Neutral'],
+                        datasets: [{
+                            data: [distribution.less_restrictive.count, distribution.more_restrictive.count, distribution.neutral.count],
+                            backgroundColor: ['#4ade80', '#ef4444', '#9ca3af']
+                        }]
+                    }
+                });
+            }
+
+            renderOverviewChart(by_type) {
+                const ctx = document.getElementById('overviewChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: Object.keys(by_type).map(k => k.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())),
+                        datasets: [{
+                            data: Object.values(by_type).map(v => v.total),
+                            backgroundColor: ['#10b981', '#4ade80', '#a7f3d0', '#059669', '#34d399', '#6ee7b7', '#a7f3d0']
+                        }]
+                    }
+                });
+            }
+
+            displayError(message) {
+                document.getElementById('resultsContainer').innerHTML = `<div class="error-state"><h2>Error</h2><p>${message}</p></div>`;
+            }
+        }
+        document.addEventListener('DOMContentLoaded', () => new UmChangeResults());
+    </script>
+</body>
+</html>
+

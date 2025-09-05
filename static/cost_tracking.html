@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FormuLogic - PMPM Cost Tracking</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: #f8fffe;
+        }
+        .card {
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.07), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        .hidden-until-ready {
+            display: none;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <!-- Navigation -->
+    <nav class="bg-white/80 backdrop-blur-md fixed top-4 left-4 right-4 z-50 rounded-xl shadow-md">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex-shrink-0">
+                    <a href="./index.html" class="text-2xl font-bold text-gray-800">Formu<span class="text-green-500">Logic</span></a>
+                </div>
+                <a href="./features.html" class="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors">Back to Features</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto pt-24">
+        <!-- Header Section -->
+        <div class="bg-white p-6 md:p-8 rounded-3xl shadow-xl mb-8">
+            <h1 class="text-4xl font-bold text-gray-800 mb-2">PBM Optimization Dashboard</h1>
+            <p class="text-lg text-gray-500">Actionable insights for a healthier formulary and a healthier budget.</p>
+        </div>
+
+        <!-- User Input Section -->
+        <div class="bg-white p-6 md:p-8 card mb-8">
+            <div class="flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0 md:space-x-4">
+                <label for="rxcui-input" class="font-semibold text-gray-700 whitespace-nowrap">Enter RXCUI ID:</label>
+                <input type="number" id="rxcui-input" placeholder="e.g., 201849 or 202467" class="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 transition-all">
+                <button id="fetch-button" class="bg-green-500 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:bg-green-600 transition-colors">Generate Report</button>
+            </div>
+            <p id="error-message" class="text-red-500 text-sm mt-4 hidden text-center"></p>
+        </div>
+        
+        <!-- Main Dashboard Content -->
+        <div id="main-content" class="hidden-until-ready">
+            <!-- Key Metrics Cards Section -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                <div class="bg-white p-6 text-center card">
+                    <h3 class="text-xl font-semibold text-gray-700">Total Annual Savings</h3>
+                    <p id="annual-savings" class="text-5xl font-extrabold text-green-600 mt-2">--</p>
+                </div>
+                <div class="bg-white p-6 text-center card">
+                    <h3 class="text-xl font-semibold text-gray-700">Overall CPMP Reduction</h3>
+                    <p id="cpmp-reduction" class="text-5xl font-extrabold text-teal-600 mt-2">--</p>
+                </div>
+                <div class="bg-white p-6 text-center card">
+                    <h3 class="text-xl font-semibold text-gray-700">Overall Cost Reduction</h3>
+                    <p id="percent-reduction" class="text-5xl font-extrabold text-emerald-600 mt-2">--</p>
+                </div>
+            </div>
+
+            <!-- Therapeutic Equivalence Section -->
+            <div class="bg-white p-6 md:p-8 card mb-8">
+                <h2 class="text-2xl font-semibold text-gray-700 mb-4">Therapeutic Equivalence Optimization 💊</h2>
+                <p class="text-gray-500 mb-6 text-sm">Compare original drug costs with cheaper, therapeutically equivalent alternatives to identify immediate savings opportunities.</p>
+                <div class="w-full">
+                    <canvas id="eqChart"></canvas>
+                </div>
+                <div class="mt-8 p-6 rounded-lg text-center font-semibold text-lg bg-green-100">
+                    <h3 class="text-gray-700 mb-1">Potential Savings</h3>
+                    <p id="eq-savings-text" class="text-xl text-green-700">--</p>
+                </div>
+            </div>
+            
+            <!-- Overall CPMP Analysis Section -->
+            <div class="bg-white p-6 md:p-8 card">
+                <h2 class="text-2xl font-semibold text-gray-700 mb-4">Cost-per-Member-per-Month (CPMP) 📈</h2>
+                <p class="text-gray-500 mb-6 text-sm">Understand the financial impact of formulary decisions across the entire member population.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-6">
+                    <div>
+                        <canvas id="cpmpBarChart"></canvas>
+                    </div>
+                    <div>
+                        <canvas id="cpmpPieChart"></canvas>
+                    </div>
+                </div>
+                <div class="mt-8">
+                    <h3 class="text-xl font-semibold text-gray-700 mb-4 text-center">CPMP Trend (Simulated Data)</h3>
+                    <canvas id="cpmpLineChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample data to simulate API calls
+        const allData = {
+            "201849": {
+                eqData: {
+                    "input_rxcui": 201849, "input_cost": 20.0, "ingredient": "Vancomycin hydrochloride",
+                    "alternatives": [{ "Alternative RXCUI": 239209, "Alternative cost": 7.5, "Cost difference": 12.5, "Percentage reduction": "62.5%" }, { "Alternative RXCUI": 313570, "Alternative cost": 7.5, "Cost difference": 12.5, "Percentage reduction": "62.5%" }]
+                },
+                cpmpData: {
+                    "original_overall_cpmp": 0.6, "alternative_overall_cpmp": 0.225,
+                    "potential_savings": { "cpmp_reduction": 0.375, "percentage_reduction": 62.5, "total_annual_savings": 75000.0 },
+                    "drug_details": [{ "ingredient": "Vancomycin hydrochloride", "original_cpmp": 0.6, "best_alternative_cpmp": 0.225 }]
+                },
+                cpmpTrendData: { "labels": ["Jan", "Feb", "Mar", "Apr", "May", "Jun"], "original_cpmp": [0.65, 0.62, 0.6, 0.58, 0.55, 0.52], "alternative_cpmp": [0.25, 0.24, 0.23, 0.22, 0.22, 0.22] }
+            },
+            "202467": {
+                eqData: {
+                    "input_rxcui": 202467, "input_cost": 45.0, "ingredient": "Atorvastatin calcium",
+                    "alternatives": [{ "Alternative RXCUI": 203525, "Alternative cost": 32.0, "Cost difference": 13.0, "Percentage reduction": "28.89%" }, { "Alternative RXCUI": 204567, "Alternative cost": 15.0, "Cost difference": 30.0, "Percentage reduction": "66.67%" }]
+                },
+                cpmpData: {
+                    "original_overall_cpmp": 0.9, "alternative_overall_cpmp": 0.3,
+                    "potential_savings": { "cpmp_reduction": 0.6, "percentage_reduction": 66.67, "total_annual_savings": 72000.0 },
+                    "drug_details": [{ "ingredient": "Atorvastatin calcium", "original_cpmp": 0.9, "best_alternative_cpmp": 0.3 }]
+                },
+                cpmpTrendData: { "labels": ["Jan", "Feb", "Mar", "Apr", "May", "Jun"], "original_cpmp": [0.95, 0.93, 0.9, 0.88, 0.85, 0.82], "alternative_cpmp": [0.35, 0.32, 0.3, 0.28, 0.25, 0.22] }
+            }
+        };
+
+        const fetchButton = document.getElementById('fetch-button');
+        const rxcuiInput = document.getElementById('rxcui-input');
+        const mainContent = document.getElementById('main-content');
+        const errorMessage = document.getElementById('error-message');
+        
+        let eqChartInstance, cpmpBarChartInstance, cpmpPieChartInstance, cpmpLineChartInstance;
+
+        fetchButton.addEventListener('click', () => {
+            const rxcui = rxcuiInput.value.trim();
+            errorMessage.classList.add('hidden');
+            
+            if (allData[rxcui]) {
+                const data = allData[rxcui];
+                mainContent.classList.remove('hidden-until-ready');
+                renderEquivalenceChart(data.eqData);
+                renderCpmpBarChart(data.cpmpData);
+                renderCpmpPieChart(data.cpmpData);
+                renderCpmpLineChart(data.cpmpTrendData);
+                displayOverallMetrics(data.cpmpData);
+            } else {
+                mainContent.classList.add('hidden-until-ready');
+                errorMessage.textContent = 'Invalid RXCUI ID. Please enter a valid ID from the sample data.';
+                errorMessage.classList.remove('hidden');
+            }
+        });
+        
+        function renderEquivalenceChart(eqData) {
+            if (eqChartInstance) eqChartInstance.destroy();
+            const altData = eqData.alternatives || [];
+            const labels = [`Original (RXCUI: ${eqData.input_rxcui})`, ...altData.map(alt => `Alternative (RXCUI: ${alt['Alternative RXCUI']})`)];
+            const costs = [eqData.input_cost, ...altData.map(alt => alt['Alternative cost'])];
+
+            if (altData.length > 0) {
+                const firstAlternative = altData[0];
+                document.getElementById('eq-savings-text').innerHTML = `<span class="text-green-800">${firstAlternative['Percentage reduction']} reduction,</span> saving <span class="text-green-800 font-extrabold">$${firstAlternative['Cost difference']}</span>`;
+            } else {
+                document.getElementById('eq-savings-text').textContent = "No cheaper alternatives found.";
+            }
+
+            eqChartInstance = new Chart(document.getElementById('eqChart').getContext('2d'), {
+                type: 'bar',
+                data: { labels, datasets: [{ label: 'Cost', data: costs, backgroundColor: (ctx) => ctx.dataIndex === 0 ? 'rgba(74, 144, 226, 0.9)' : 'rgba(54, 215, 183, 0.9)', borderRadius: 8 }] },
+                options: { indexAxis: 'y', responsive: true, scales: { x: { beginAtZero: true, title: { display: true, text: 'Cost ($)' } }, y: { grid: { display: false } } }, plugins: { legend: { display: false }, title: { display: true, text: 'Original vs. Alternative Drug Costs', font: { size: 16, weight: 'bold' } } } }
+            });
+        }
+        
+        function renderCpmpBarChart(cpmpData) {
+            if (cpmpBarChartInstance) cpmpBarChartInstance.destroy();
+            const drugDetails = cpmpData.drug_details[0];
+            cpmpBarChartInstance = new Chart(document.getElementById('cpmpBarChart').getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: [drugDetails.ingredient],
+                    datasets: [ { label: 'Original CPMP', data: [drugDetails.original_cpmp], backgroundColor: '#4ade80' }, { label: 'Best Alternative CPMP', data: [drugDetails.best_alternative_cpmp], backgroundColor: '#2dd4bf' }]
+                },
+                options: { responsive: true, scales: { y: { beginAtZero: true, title: { display: true, text: 'CPMP ($)' } } }, plugins: { title: { display: true, text: 'CPMP Comparison by Drug', font: { size: 16, weight: 'bold' } } } }
+            });
+        }
+        
+        function renderCpmpPieChart(cpmpData) {
+            if (cpmpPieChartInstance) cpmpPieChartInstance.destroy();
+            const savings = cpmpData.potential_savings.cpmp_reduction;
+            const optimizedCost = cpmpData.alternative_overall_cpmp;
+            cpmpPieChartInstance = new Chart(document.getElementById('cpmpPieChart').getContext('2d'), {
+                type: 'pie',
+                data: {
+                    labels: [`Optimized Cost ($${optimizedCost.toFixed(2)})`, `Potential Savings ($${savings.toFixed(2)})`],
+                    datasets: [{ data: [optimizedCost, savings], backgroundColor: ['#2dd4bf', '#4ade80'], hoverOffset: 8 }]
+                },
+                options: { responsive: true, plugins: { legend: { position: 'bottom' }, title: { display: true, text: 'Overall CPMP Breakdown', font: { size: 16, weight: 'bold' } } } }
+            });
+        }
+        
+        function renderCpmpLineChart(cpmpTrendData) {
+            if (cpmpLineChartInstance) cpmpLineChartInstance.destroy();
+            cpmpLineChartInstance = new Chart(document.getElementById('cpmpLineChart').getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: cpmpTrendData.labels,
+                    datasets: [
+                        { label: 'Original CPMP', data: cpmpTrendData.original_cpmp, borderColor: '#4ade80', fill: false, tension: 0.4 },
+                        { label: 'Optimized CPMP', data: cpmpTrendData.alternative_cpmp, borderColor: '#2dd4bf', fill: false, tension: 0.4 }
+                    ]
+                },
+                options: { responsive: true, scales: { y: { beginAtZero: false, title: { display: true, text: 'CPMP ($)' } }, x: { title: { display: true, text: 'Months' } } }, plugins: { title: { display: true, text: 'Simulated CPMP Trend Over Time', font: { size: 16, weight: 'bold' } } } }
+            });
+        }
+
+        function displayOverallMetrics(cpmpData) {
+            const savings = cpmpData.potential_savings;
+            document.getElementById('annual-savings').textContent = `$${savings.total_annual_savings.toLocaleString()}`;
+            document.getElementById('cpmp-reduction').textContent = `$${savings.cpmp_reduction.toFixed(2)}`;
+            document.getElementById('percent-reduction').textContent = `${savings.percentage_reduction.toFixed(1)}%`;
+        }
+    </script>
+</body>
+</html>
+
