@@ -32,8 +32,11 @@ def register(
         )
 
     existing_user = db.query(User).filter(User.email == user.email).first()
+    existing_user2 = db.query(User).filter(User.username == user.username).first()
     if existing_user:
         raise HTTPException(status_code=400, detail="A user with this email already exists.")
+    if existing_user2:
+        raise HTTPException(status_code=400, detail="A user with this username already exists.")
 
     hashed_pw = hash_password(user.password)
 
